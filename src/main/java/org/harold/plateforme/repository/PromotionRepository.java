@@ -13,6 +13,7 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     Optional<Promotion> findByNom(String nom);
 
     List<Promotion> findByFiliere(String filiere);
+    List<Promotion> findByNomContainingIgnoreCase(String nom);
 
     boolean existsByNom(String nom);
 }

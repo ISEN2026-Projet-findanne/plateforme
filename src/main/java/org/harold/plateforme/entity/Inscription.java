@@ -41,6 +41,7 @@ public class Inscription {
     @Column(name = "date_inscription")
     private LocalDate dateInscription;
 
+
     @PrePersist
     protected void onCreate() {
         this.dateInscription = LocalDate.now();

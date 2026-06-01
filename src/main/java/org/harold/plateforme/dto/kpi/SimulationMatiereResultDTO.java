@@ -36,8 +36,8 @@ public class SimulationMatiereResultDTO {
 
     /**
      * Note matière calculée avec la note simulée.
-     * Calculée via (CC*coeff_CC + noteSimulee*coeff_EF + TP*coeff_TP)
-     * / somme(coeffs).
+     * Calculée via (CC*coeff_CC + noteSimulee*coeff_EF
+     * + TP*coeff_TP) / somme(coeffs).
      */
     private Double noteMatiereSimulee;
 
@@ -49,13 +49,13 @@ public class SimulationMatiereResultDTO {
 
     /**
      * Statut de validation de la matière avec la note simulée.
-     * Vrai si noteMatiereSimulee >= 10.
+     * Null si note simulée non calculable.
      */
-    private boolean valideAvecSimulation;
+    private Boolean matiereValideAvecSimulation;
 
     /**
      * Statut de validation actuel avant simulation.
-     * Permet à React d'afficher si la simulation change le statut.
+     * Null si note actuelle non disponible.
      */
-    private boolean valideActuellement;
+    private Boolean matiereValideActuellement;
 }

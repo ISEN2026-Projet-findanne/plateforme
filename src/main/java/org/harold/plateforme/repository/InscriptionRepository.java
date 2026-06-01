@@ -30,4 +30,5 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
             "AND i.actif = true")
     List<Inscription> findActivesByAnneeAcademique(
             @Param("anneeAcademiqueId") Long anneeAcademiqueId);
+    List<Inscription> findByPromotionId(Long promotionId);
 }

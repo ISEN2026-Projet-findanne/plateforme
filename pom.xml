@@ -30,7 +30,7 @@
         <java.version>17</java.version>
         <jjwt.version>0.12.5</jjwt.version>
         <itext.version>8.0.3</itext.version>
-        <modelmapper.version>3.2.0</modelmapper.version>
+        <modelmapper.version>3.2.6</modelmapper.version>
         <commons-csv.version>1.10.0</commons-csv.version>
     </properties>
 
@@ -42,6 +42,16 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <dependency><!-- Pour la lecture des fichiers xlsx pour les fichiers Theia -->
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
