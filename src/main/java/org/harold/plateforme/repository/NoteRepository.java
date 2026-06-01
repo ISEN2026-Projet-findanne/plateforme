@@ -52,25 +52,15 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
             Long matiereId,
             Long anneeAcademiqueId);
 
-    // Moyennes par matière pour une promotion et une année
-    @Query("SELECT AVG(n.valeur) FROM Note n " +
-            "JOIN Inscription i ON i.etudiant = n.etudiant " +
-            "WHERE n.matiere.id = :matiereId " +
-            "AND n.anneeAcademique.id = :anneeAcademiqueId " +
-            "AND i.promotion.id = :promotionId " +
-            "AND i.actif = true " +
-            "AND n.type != 'RATTRAPAGE'")
-    Double findMoyenneByMatiereIdAndPromotionIdAndAnneeAcademiqueId(
-            @Param("matiereId") Long matiereId,
-            @Param("promotionId") Long promotionId,
-            @Param("anneeAcademiqueId") Long anneeAcademiqueId);
-
     // Toutes les notes d'une promotion pour une année académique
+    // Navigation depuis Inscription → plus propre et plus fiable
     @Query("SELECT n FROM Note n " +
-            "JOIN Inscription i ON i.etudiant = n.etudiant " +
-            "WHERE i.promotion.id = :promotionId " +
-            "AND n.anneeAcademique.id = :anneeAcademiqueId " +
-            "AND i.actif = true")
+            "WHERE n.etudiant.id IN (" +
+            "   SELECT i.etudiant.id FROM Inscription i " +
+            "   WHERE i.promotion.id = :promotionId " +
+            "   AND i.anneeAcademique.id = :anneeAcademiqueId " +
+            "   AND i.actif = true" +
+            ") AND n.anneeAcademique.id = :anneeAcademiqueId")
     List<Note> findByPromotionIdAndAnneeAcademiqueId(
             @Param("promotionId") Long promotionId,
             @Param("anneeAcademiqueId") Long anneeAcademiqueId);

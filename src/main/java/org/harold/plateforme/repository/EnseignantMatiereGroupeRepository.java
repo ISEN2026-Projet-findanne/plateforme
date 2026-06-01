@@ -9,7 +9,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface EnseignantMatiereGroupeRepository extends JpaRepository<EnseignantMatiereGroupe, Long> {
+public interface EnseignantMatiereGroupeRepository
+        extends JpaRepository<EnseignantMatiereGroupe, Long> {
 
     // Toutes les assignations d'un enseignant
     List<EnseignantMatiereGroupe> findByUtilisateurId(Long utilisateurId);
@@ -32,7 +33,7 @@ public interface EnseignantMatiereGroupeRepository extends JpaRepository<Enseign
             Long matiereId,
             Long groupeClasseId);
 
-    // Tous les enseignants d'une matière
+    // Tous les enseignants d'une matière par type d'enseignement
     @Query("SELECT emg FROM EnseignantMatiereGroupe emg " +
             "WHERE emg.matiere.id = :matiereId " +
             "AND emg.typeEnseignement = :typeEnseignement")
@@ -40,10 +41,14 @@ public interface EnseignantMatiereGroupeRepository extends JpaRepository<Enseign
             @Param("matiereId") Long matiereId,
             @Param("typeEnseignement") TypeEnseignement typeEnseignement);
 
-    // Toutes les matières et groupes d'un enseignant pour une année académique
+    // Toutes les matières et groupes d'un enseignant pour une année
+    // LEFT JOIN FETCH pour éviter le problème N+1 de lazy loading
     @Query("SELECT emg FROM EnseignantMatiereGroupe emg " +
+            "LEFT JOIN FETCH emg.matiere " +
+            "LEFT JOIN FETCH emg.groupeClasse gc " +
+            "LEFT JOIN FETCH gc.anneeAcademique " +
             "WHERE emg.utilisateur.id = :enseignantId " +
-            "AND emg.groupeClasse.anneeAcademique.id = :anneeAcademiqueId")
+            "AND gc.anneeAcademique.id = :anneeAcademiqueId")
     List<EnseignantMatiereGroupe> findByEnseignantIdAndAnneeAcademiqueId(
             @Param("enseignantId") Long enseignantId,
             @Param("anneeAcademiqueId") Long anneeAcademiqueId);

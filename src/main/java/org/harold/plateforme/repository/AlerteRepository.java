@@ -32,12 +32,14 @@ public interface AlerteRepository extends JpaRepository<Alerte, Long> {
             Long anneeAcademiqueId,
             NiveauAlerte niveau);
 
-    // Toutes les alertes critiques et élevées d'une promotion pour une année
+    // Alertes élevées et critiques d'une promotion pour une année
+    // Navigation depuis Inscription → évite les jointures sur objets
     @Query("SELECT a FROM Alerte a " +
-            "JOIN Inscription i ON i.etudiant = a.etudiant " +
-            "WHERE i.promotion.id = :promotionId " +
-            "AND a.anneeAcademique.id = :anneeAcademiqueId " +
-            "AND i.actif = true " +
+            "WHERE a.etudiant.id IN (" +
+            "   SELECT i.etudiant.id FROM Inscription i " +
+            "   WHERE i.promotion.id = :promotionId " +
+            "   AND i.actif = true" +
+            ") AND a.anneeAcademique.id = :anneeAcademiqueId " +
             "AND a.niveau IN ('ELEVE', 'CRITIQUE') " +
             "ORDER BY a.scoreRisque DESC")
     List<Alerte> findEleveesCritiquesByPromotionIdAndAnneeAcademiqueId(
@@ -46,10 +48,11 @@ public interface AlerteRepository extends JpaRepository<Alerte, Long> {
 
     // Nombre d'alertes non lues d'une promotion pour une année
     @Query("SELECT COUNT(a) FROM Alerte a " +
-            "JOIN Inscription i ON i.etudiant = a.etudiant " +
-            "WHERE i.promotion.id = :promotionId " +
-            "AND a.anneeAcademique.id = :anneeAcademiqueId " +
-            "AND i.actif = true " +
+            "WHERE a.etudiant.id IN (" +
+            "   SELECT i.etudiant.id FROM Inscription i " +
+            "   WHERE i.promotion.id = :promotionId " +
+            "   AND i.actif = true" +
+            ") AND a.anneeAcademique.id = :anneeAcademiqueId " +
             "AND a.lue = false")
     Long countNonLuesByPromotionIdAndAnneeAcademiqueId(
             @Param("promotionId") Long promotionId,

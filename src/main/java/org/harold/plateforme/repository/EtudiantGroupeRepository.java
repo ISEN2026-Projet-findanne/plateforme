@@ -27,15 +27,20 @@ public interface EtudiantGroupeRepository extends JpaRepository<EtudiantGroupe, 
             Long groupeClasseId);
 
     // Tous les groupes d'un étudiant pour une année académique
+    // LEFT JOIN FETCH pour éviter le problème N+1 de lazy loading
     @Query("SELECT eg FROM EtudiantGroupe eg " +
+            "LEFT JOIN FETCH eg.groupeClasse gc " +
+            "LEFT JOIN FETCH gc.anneeAcademique " +
             "WHERE eg.etudiant.id = :etudiantId " +
-            "AND eg.groupeClasse.anneeAcademique.id = :anneeAcademiqueId")
+            "AND gc.anneeAcademique.id = :anneeAcademiqueId")
     List<EtudiantGroupe> findByEtudiantIdAndAnneeAcademiqueId(
             @Param("etudiantId") Long etudiantId,
             @Param("anneeAcademiqueId") Long anneeAcademiqueId);
 
     // Tous les étudiants d'une matière pour une année académique
+    // Navigation depuis groupeClasse → matiere et anneeAcademique
     @Query("SELECT eg FROM EtudiantGroupe eg " +
+            "LEFT JOIN FETCH eg.etudiant " +
             "WHERE eg.groupeClasse.matiere.id = :matiereId " +
             "AND eg.groupeClasse.anneeAcademique.id = :anneeAcademiqueId")
     List<EtudiantGroupe> findByMatiereIdAndAnneeAcademiqueId(

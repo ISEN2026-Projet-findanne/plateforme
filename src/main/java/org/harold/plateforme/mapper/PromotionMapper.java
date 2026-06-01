@@ -1,11 +1,11 @@
 package org.harold.plateforme.mapper;
 
+import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.promotion.PromotionCreateDTO;
 import org.harold.plateforme.dto.promotion.PromotionDTO;
 import org.harold.plateforme.dto.promotion.PromotionUpdateDTO;
 import org.harold.plateforme.entity.Promotion;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,10 +15,10 @@ import org.springframework.stereotype.Component;
  * @version 1.0
  */
 @Component
+@RequiredArgsConstructor
 public class PromotionMapper {
 
-    @Autowired
-    private ModelMapper modelMapper;
+    private final ModelMapper modelMapper;
 
     /**
      * Convertit une entité Promotion en PromotionDTO.

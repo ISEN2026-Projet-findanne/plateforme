@@ -14,7 +14,9 @@ public interface RemarqueRepository extends JpaRepository<Remarque, Long> {
     List<Remarque> findByEtudiantId(Long etudiantId);
 
     // Toutes les remarques d'un étudiant par type
-    List<Remarque> findByEtudiantIdAndType(Long etudiantId, TypeRemarque type);
+    List<Remarque> findByEtudiantIdAndType(
+            Long etudiantId,
+            TypeRemarque type);
 
     // Toutes les remarques d'un enseignant
     List<Remarque> findByEnseignantId(Long enseignantId);
@@ -27,16 +29,21 @@ public interface RemarqueRepository extends JpaRepository<Remarque, Long> {
             Long etudiantId,
             Long groupeClasseId);
 
-    // Nombre de remarques négatives d'un étudiant pour une année académique
+    // Nombre de remarques d'un type précis pour un étudiant
+    // et une année académique
+    // Utilisation du paramètre TypeRemarque au lieu du String
+    // pour éviter les erreurs de type en JPQL
     @Query("SELECT COUNT(r) FROM Remarque r " +
             "WHERE r.etudiant.id = :etudiantId " +
             "AND r.groupeClasse.anneeAcademique.id = :anneeAcademiqueId " +
-            "AND r.type = 'NEGATIVE'")
-    Long countRemarquesNegativesByEtudiantIdAndAnneeAcademiqueId(
+            "AND r.type = :type")
+    Long countByEtudiantIdAndAnneeAcademiqueIdAndType(
             @Param("etudiantId") Long etudiantId,
-            @Param("anneeAcademiqueId") Long anneeAcademiqueId);
+            @Param("anneeAcademiqueId") Long anneeAcademiqueId,
+            @Param("type") TypeRemarque type);
 
     // Toutes les remarques d'un étudiant pour une année académique
+    // triées par date décroissante
     @Query("SELECT r FROM Remarque r " +
             "WHERE r.etudiant.id = :etudiantId " +
             "AND r.groupeClasse.anneeAcademique.id = :anneeAcademiqueId " +

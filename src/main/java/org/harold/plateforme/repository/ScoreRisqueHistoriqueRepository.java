@@ -8,14 +8,15 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface ScoreRisqueHistoriqueRepository extends JpaRepository<ScoreRisqueHistorique, Long> {
+public interface ScoreRisqueHistoriqueRepository
+        extends JpaRepository<ScoreRisqueHistorique, Long> {
 
-    // Tout l'historique d'un étudiant pour une année académique
+    // Tout l'historique d'un étudiant pour une année trié par date
     List<ScoreRisqueHistorique> findByEtudiantIdAndAnneeAcademiqueIdOrderByCalculeLeDesc(
             Long etudiantId,
             Long anneeAcademiqueId);
 
-    // Dernier score calculé d'un étudiant pour une année académique
+    // Dernier score calculé d'un étudiant pour une année
     Optional<ScoreRisqueHistorique> findTopByEtudiantIdAndAnneeAcademiqueIdOrderByCalculeLeDesc(
             Long etudiantId,
             Long anneeAcademiqueId);
@@ -24,23 +25,26 @@ public interface ScoreRisqueHistoriqueRepository extends JpaRepository<ScoreRisq
     List<ScoreRisqueHistorique> findByEtudiantIdOrderByCalculeLeDesc(
             Long etudiantId);
 
-    // Tous les scores d'une promotion pour une année académique
+    // Tous les scores d'une promotion pour une année
+    // Navigation depuis Inscription → évite les jointures sur objets
     @Query("SELECT srh FROM ScoreRisqueHistorique srh " +
-            "JOIN Inscription i ON i.etudiant = srh.etudiant " +
-            "WHERE i.promotion.id = :promotionId " +
-            "AND srh.anneeAcademique.id = :anneeAcademiqueId " +
-            "AND i.actif = true " +
+            "WHERE srh.etudiant.id IN (" +
+            "   SELECT i.etudiant.id FROM Inscription i " +
+            "   WHERE i.promotion.id = :promotionId " +
+            "   AND i.actif = true" +
+            ") AND srh.anneeAcademique.id = :anneeAcademiqueId " +
             "ORDER BY srh.scoreGlobal DESC")
     List<ScoreRisqueHistorique> findLatestByPromotionIdAndAnneeAcademiqueId(
             @Param("promotionId") Long promotionId,
             @Param("anneeAcademiqueId") Long anneeAcademiqueId);
 
-    // Étudiants à risque élevé ou critique d'une promotion pour une année
+    // Étudiants à risque au dessus d'un seuil pour une promotion
     @Query("SELECT srh FROM ScoreRisqueHistorique srh " +
-            "JOIN Inscription i ON i.etudiant = srh.etudiant " +
-            "WHERE i.promotion.id = :promotionId " +
-            "AND srh.anneeAcademique.id = :anneeAcademiqueId " +
-            "AND i.actif = true " +
+            "WHERE srh.etudiant.id IN (" +
+            "   SELECT i.etudiant.id FROM Inscription i " +
+            "   WHERE i.promotion.id = :promotionId " +
+            "   AND i.actif = true" +
+            ") AND srh.anneeAcademique.id = :anneeAcademiqueId " +
             "AND srh.scoreGlobal >= :seuilRisque " +
             "ORDER BY srh.scoreGlobal DESC")
     List<ScoreRisqueHistorique> findAtRiskByPromotionIdAndAnneeAcademiqueId(
