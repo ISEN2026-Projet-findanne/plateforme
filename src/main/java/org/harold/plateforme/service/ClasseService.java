@@ -14,6 +14,9 @@ import org.harold.plateforme.repository.ClassePromotionRepository;
 import org.harold.plateforme.repository.ClasseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.harold.plateforme.entity.Semestre;
+import org.harold.plateforme.repository.SemestreRepository;
+import java.time.LocalDate;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +37,7 @@ public class ClasseService {
 
     private final ClasseRepository classeRepository;
     private final ClassePromotionRepository classePromotionRepository;
+    private final SemestreRepository semestreRepository;
     private final ClasseMapper classeMapper;
     private final PromotionService promotionService;
     private final AnneeAcademiqueService anneeAcademiqueService;
@@ -70,6 +74,9 @@ public class ClasseService {
 
         // 3. Sauvegarder
         Classe sauvegarde = classeRepository.save(classe);
+
+        // 3bis. Créer automatiquement les 2 semestres (S1 et S2)
+        creerSemestresParDefaut(sauvegarde, LocalDate.now());
 
         // 4. Audit
         ClasseDTO classeDTO = classeMapper.toDTO(sauvegarde);
@@ -270,7 +277,31 @@ public class ClasseService {
     }
 
     // ===== MÉTHODES PRIVÉES =====
+    /**
+     * Crée automatiquement les deux semestres d'une classe.
+     *
+     * <p>Chaque classe possède toujours exactement deux semestres
+     * (S1 et S2), avec un coefficient de 0.5 chacun.
+     * La date de début est fixée à la date de création de la classe.
+     * La date de fin sera gérée en V2.</p>
+     *
+     * @param classe        la classe à laquelle rattacher les semestres
+     * @param dateCreation  date de création utilisée comme date de début
+     */
+    private void creerSemestresParDefaut(
+            Classe classe,
+            LocalDate dateCreation) {
 
+        for (int numero = 1; numero <= 2; numero++) {
+            Semestre semestre = new Semestre();
+            semestre.setClasse(classe);
+            semestre.setNumero(numero);
+            semestre.setCoefficient(0.5);
+            semestre.setDateDebut(dateCreation);
+            // dateFin laissée à null — gérée en V2
+            semestreRepository.save(semestre);
+        }
+    }
     /**
      * Convertit une entité ClassePromotion en ClassePromotionDTO.
      *
