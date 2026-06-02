@@ -9,14 +9,14 @@ import org.harold.plateforme.dto.kpi.KpiSemestreDTO;
 import org.harold.plateforme.entity.AnneeAcademique;
 import org.harold.plateforme.entity.Etudiant;
 import org.harold.plateforme.entity.Matiere;
-import org.harold.plateforme.entity.Semestre;
 import org.harold.plateforme.mapper.KpiMapper;
 import org.harold.plateforme.repository.AnneeAcademiqueRepository;
 import org.harold.plateforme.repository.EtudiantRepository;
+import org.harold.plateforme.repository.GroupeClasseRepository;
 import org.harold.plateforme.repository.MatiereRepository;
 import org.harold.plateforme.repository.NoteRepository;
+import org.harold.plateforme.repository.PromotionRepository;
 import org.harold.plateforme.repository.SemestreRepository;
-import org.harold.plateforme.util.CalculKpiUtils;
 import org.harold.plateforme.util.CalculNoteUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Service de calcul des KPI pédagogiques.
@@ -48,6 +47,8 @@ public class KpiService {
     private final SemestreRepository semestreRepository;
     private final AnneeAcademiqueRepository anneeAcademiqueRepository;
     private final NoteRepository noteRepository;
+    private final PromotionRepository promotionRepository;
+    private final GroupeClasseRepository groupeClasseRepository;
     private final KpiMapper kpiMapper;
 
     // ===== KPI MATIERE =====
@@ -87,7 +88,7 @@ public class KpiService {
 
         for (Etudiant etudiant : etudiants) {
             // Note avant rattrapage (CC + EF sans rattrapage)
-            Double noteAvant = calculerNoteAvantRattrapage(
+            Double noteAvant = noteService.calculerNoteAvantRattrapage(
                     etudiant.getId(), matiereId, anneeAcademiqueId);
             if (noteAvant != null) notesAvant.add(noteAvant);
 
@@ -97,12 +98,17 @@ public class KpiService {
             if (noteApres != null) notesApres.add(noteApres);
         }
 
-        // 4. Construire le DTO via KpiMapper
+        // 4. Récupérer le nom de la promotion (A5)
+        String promotionNom = promotionRepository.findById(promotionId)
+                .map(p -> p.getNom())
+                .orElse(null);
+
+        // 5. Construire le DTO via KpiMapper
         return kpiMapper.toKpiMatiereDTO(
                 notesApres, notesAvant,
                 matiereId, matiere.getNom(), matiere.getCode(),
                 anneeAcademiqueId, annee.getAnnee(),
-                null, null);
+                promotionNom, null);
     }
 
     /**
@@ -134,7 +140,7 @@ public class KpiService {
         List<Double> notesApres = new ArrayList<>();
 
         for (Etudiant etudiant : etudiants) {
-            Double noteAvant = calculerNoteAvantRattrapage(
+            Double noteAvant = noteService.calculerNoteAvantRattrapage(
                     etudiant.getId(), matiereId, anneeAcademiqueId);
             if (noteAvant != null) notesAvant.add(noteAvant);
 
@@ -143,12 +149,17 @@ public class KpiService {
             if (noteApres != null) notesApres.add(noteApres);
         }
 
-        // 4. Construire le DTO
+        // 4. Récupérer le nom du groupe (A5)
+        String groupeNom = groupeClasseRepository.findById(groupeClasseId)
+                .map(g -> g.getNom())
+                .orElse(null);
+
+        // 5. Construire le DTO
         return kpiMapper.toKpiMatiereDTO(
                 notesApres, notesAvant,
                 matiereId, matiere.getNom(), matiere.getCode(),
                 anneeAcademiqueId, annee.getAnnee(),
-                null, null);
+                null, groupeNom);
     }
 
     // ===== KPI SEMESTRE =====
@@ -191,13 +202,18 @@ public class KpiService {
                 calculerMoyennesSemestrePourEtudiants(
                         etudiants, matieres, anneeAcademiqueId);
 
-        // 5. Construire le DTO
+        // 5. Récupérer le nom de la promotion (A5)
+        String promotionNom = promotionRepository.findById(promotionId)
+                .map(p -> p.getNom())
+                .orElse(null);
+
+        // 6. Construire le DTO
         return kpiMapper.toKpiSemestreDTO(
                 moyennesSemestre,
                 numeroSemestre,
                 anneeAcademiqueId,
                 annee.getAnnee(),
-                null, null);
+                promotionNom, null);
     }
 
     // ===== KPI ANNUEL =====
@@ -249,12 +265,17 @@ public class KpiService {
             }
         }
 
-        // 5. Construire le DTO
+        // 5. Récupérer le nom de la promotion (A5)
+        String promotionNom = promotionRepository.findById(promotionId)
+                .map(p -> p.getNom())
+                .orElse(null);
+
+        // 6. Construire le DTO
         return kpiMapper.toKpiAnnuelDTO(
                 moyennesAnnuelles,
                 anneeAcademiqueId,
                 annee.getAnnee(),
-                null, null);
+                promotionNom, null);
     }
 
     // ===== COMPARAISONS =====
@@ -334,61 +355,6 @@ public class KpiService {
     // ===== MÉTHODES PRIVÉES =====
 
     /**
-     * Calcule la note finale d'un étudiant dans une matière
-     * AVANT rattrapage (CC + EF uniquement).
-     *
-     * <p>Utilisé pour calculer le taux de rattrapage.</p>
-     *
-     * @param etudiantId        identifiant de l'étudiant
-     * @param matiereId         identifiant de la matière
-     * @param anneeAcademiqueId identifiant de l'année académique
-     * @return                  la note avant rattrapage ou null
-     */
-    private Double calculerNoteAvantRattrapage(
-            Long etudiantId,
-            Long matiereId,
-            Long anneeAcademiqueId) {
-
-        // Récupérer les notes sans tenir compte du rattrapage
-        List<org.harold.plateforme.entity.Note> notes =
-                noteRepository.findByEtudiantIdAndMatiereIdAndAnneeAcademiqueId(
-                        etudiantId, matiereId, anneeAcademiqueId);
-
-        if (notes.isEmpty()) return null;
-
-        Double noteCC = notes.stream()
-                .filter(n -> n.getType() ==
-                        org.harold.plateforme.entity.Note.TypeNote.CC)
-                .map(org.harold.plateforme.entity.Note::getValeur)
-                .findFirst().orElse(null);
-
-        Double noteEF = notes.stream()
-                .filter(n -> n.getType() ==
-                        org.harold.plateforme.entity.Note.TypeNote.EXAMEN_FINAL)
-                .map(org.harold.plateforme.entity.Note::getValeur)
-                .findFirst().orElse(null);
-
-        Double noteTP = notes.stream()
-                .filter(n -> n.getType() ==
-                        org.harold.plateforme.entity.Note.TypeNote.TP)
-                .map(org.harold.plateforme.entity.Note::getValeur)
-                .findFirst().orElse(null);
-
-        List<org.harold.plateforme.entity.TypeEvaluation> types =
-                noteRepository.findByMatiereIdAndAnneeAcademiqueId(
-                                matiereId, anneeAcademiqueId)
-                        .stream()
-                        .map(n -> n.getMatiere())
-                        .findFirst()
-                        .map(m -> new ArrayList<org.harold.plateforme
-                                .entity.TypeEvaluation>())
-                        .orElse(new ArrayList<>());
-
-        // Utiliser TypeEvaluationRepository directement
-        return null; // sera complété ci-dessous
-    }
-
-    /**
      * Calcule les moyennes semestrielles d'une liste d'étudiants.
      *
      * @param etudiants         liste des étudiants
@@ -443,32 +409,6 @@ public class KpiService {
     }
 
     /**
-     * Convertit un KpiMatiereDTO en EntreeComparaisonDTO.
-     *
-     * @param kpi           le KPI source
-     * @param anneeLibelle  libellé de l'année (pour inter-années)
-     * @return              l'entrée de comparaison
-     */
-    private EntreeComparaisonDTO toEntreeComparaison(
-            KpiMatiereDTO kpi,
-            String anneeLibelle) {
-        EntreeComparaisonDTO entree = new EntreeComparaisonDTO();
-        entree.setAnneeAcademique(
-                anneeLibelle != null ? anneeLibelle : kpi.getAnneeAcademique());
-        entree.setMoyenne(kpi.getMoyenne());
-        entree.setMinimum(kpi.getMinimum());
-        entree.setMaximum(kpi.getMaximum());
-        entree.setEcartType(kpi.getEcartType());
-        entree.setMediane(kpi.getMediane());
-        entree.setTauxReussite(kpi.getTauxReussite());
-        entree.setTauxEchec(kpi.getTauxEchec());
-        entree.setTauxRattrapage(kpi.getTauxRattrapage());
-        entree.setNbEtudiants(kpi.getNbEtudiants());
-        return entree;
-    }
-    // Dans KpiService — ajouter ces deux méthodes
-
-    /**
      * Récupère toutes les matières d'une classe.
      *
      * @param classeId  identifiant de la classe
@@ -492,5 +432,30 @@ public class KpiService {
             Integer numeroSemestre) {
         return matiereRepository.findByClasseIdAndNumeroSemestre(
                 classeId, numeroSemestre);
+    }
+
+    /**
+     * Convertit un KpiMatiereDTO en EntreeComparaisonDTO.
+     *
+     * @param kpi           le KPI source
+     * @param anneeLibelle  libellé de l'année (pour inter-années)
+     * @return              l'entrée de comparaison
+     */
+    private EntreeComparaisonDTO toEntreeComparaison(
+            KpiMatiereDTO kpi,
+            String anneeLibelle) {
+        EntreeComparaisonDTO entree = new EntreeComparaisonDTO();
+        entree.setAnneeAcademique(
+                anneeLibelle != null ? anneeLibelle : kpi.getAnneeAcademique());
+        entree.setMoyenne(kpi.getMoyenne());
+        entree.setMinimum(kpi.getMinimum());
+        entree.setMaximum(kpi.getMaximum());
+        entree.setEcartType(kpi.getEcartType());
+        entree.setMediane(kpi.getMediane());
+        entree.setTauxReussite(kpi.getTauxReussite());
+        entree.setTauxEchec(kpi.getTauxEchec());
+        entree.setTauxRattrapage(kpi.getTauxRattrapage());
+        entree.setNbEtudiants(kpi.getNbEtudiants());
+        return entree;
     }
 }

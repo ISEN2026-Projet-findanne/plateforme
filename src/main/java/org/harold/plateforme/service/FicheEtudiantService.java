@@ -8,6 +8,7 @@ import org.harold.plateforme.dto.etudiant.NoteEtudiantDTO;
 import org.harold.plateforme.dto.etudiant.RemarqueDTO;
 import org.harold.plateforme.dto.etudiant.SemestreDetailDTO;
 import org.harold.plateforme.dto.kpi.KpiMatiereDTO;
+import org.harold.plateforme.entity.AnneeAcademique;
 import org.harold.plateforme.entity.Etudiant;
 import org.harold.plateforme.entity.GroupeMatieres;
 import org.harold.plateforme.entity.Inscription;
@@ -17,6 +18,7 @@ import org.harold.plateforme.entity.Remarque;
 import org.harold.plateforme.entity.ScoreRisqueHistorique;
 import org.harold.plateforme.entity.Semestre;
 import org.harold.plateforme.repository.EtudiantGroupeRepository;
+import org.harold.plateforme.repository.EtudiantRepository;
 import org.harold.plateforme.repository.GroupeMatieresRepository;
 import org.harold.plateforme.repository.InscriptionRepository;
 import org.harold.plateforme.repository.NoteRepository;
@@ -53,6 +55,7 @@ public class FicheEtudiantService {
     private final NoteService noteService;
     private final KpiService kpiService;
     private final ScoreRisqueService scoreRisqueService;
+    private final AnneeAcademiqueService anneeAcademiqueService;
     private final MatiereService matiereService;
     private final NoteRepository noteRepository;
     private final RemarqueRepository remarqueRepository;
@@ -60,6 +63,7 @@ public class FicheEtudiantService {
     private final SemestreRepository semestreRepository;
     private final GroupeMatieresRepository groupeMatieresRepository;
     private final EtudiantGroupeRepository etudiantGroupeRepository;
+    private final EtudiantRepository etudiantRepository;
 
     // ===== FICHE RESPONSABLE =====
 
@@ -135,12 +139,12 @@ public class FicheEtudiantService {
         fiche.setSemestreS1(dtoS1);
         fiche.setSemestreS2(dtoS2);
 
-        // 4. Moyennes
+        // 4. Moyennes (vision pratique : si un semestre est vide,
+        //    on prend l'autre)
         fiche.setMoyenneS1(moyenneS1);
         fiche.setMoyenneS2(moyenneS2);
         fiche.setMoyenneGenerale(
-                CalculNoteUtils.calculerMoyenneAnnuelle(
-                        moyenneS1, moyenneS2));
+                calculerMoyenneCourante(moyenneS1, moyenneS2));
 
         // 5. Statuts de validation
         fiche.setS1Valide(dtoS1 != null ? dtoS1.getValide() : null);
@@ -212,6 +216,11 @@ public class FicheEtudiantService {
         fiche.setMatiereNom(matiere.getNom());
         fiche.setMatiereCode(matiere.getCode());
 
+        // A3 : renseigner l'année académique
+        AnneeAcademique annee = anneeAcademiqueService
+                .getEntityById(anneeAcademiqueId);
+        fiche.setAnneeAcademique(annee.getAnnee());
+
         // 2. Récupérer les notes de la matière
         List<Note> notes = noteRepository
                 .findByEtudiantIdAndMatiereIdAndAnneeAcademiqueId(
@@ -266,6 +275,32 @@ public class FicheEtudiantService {
     }
 
     // ===== MÉTHODES PRIVÉES =====
+
+    /**
+     * Calcule la moyenne courante d'un étudiant en vision pratique.
+     *
+     * <p>Si les deux semestres ont des notes : moyenne annuelle
+     * pondérée classique (S1×50% + S2×50%).
+     * Si un seul semestre a des notes : on retourne la moyenne
+     * de ce semestre (permet de consulter une fiche en cours
+     * d'année sans attendre le S2).
+     * Si aucun semestre n'a de notes : null.</p>
+     *
+     * @param moyS1 moyenne du semestre 1 (peut être null)
+     * @param moyS2 moyenne du semestre 2 (peut être null)
+     * @return      la moyenne courante ou null si rien
+     */
+    private Double calculerMoyenneCourante(
+            Double moyS1,
+            Double moyS2) {
+        if (moyS1 != null && moyS2 != null) {
+            return CalculNoteUtils.calculerMoyenneAnnuelle(
+                    moyS1, moyS2);
+        }
+        if (moyS1 != null) return moyS1;
+        if (moyS2 != null) return moyS2;
+        return null;
+    }
 
     /**
      * Construit le détail d'un semestre pour un étudiant.
@@ -344,13 +379,7 @@ public class FicheEtudiantService {
         dto.setNom(groupe.getNom());
         dto.setCoefficient(groupe.getCoefficient());
 
-        // Matières du groupe
-        List<Matiere> matieres = matiereService
-                .getEntityById(groupe.getId()) != null
-                ? new ArrayList<>()
-                : new ArrayList<>();
-
-        // Récupérer les matières du groupe directement
+        // Récupérer les matières du groupe
         List<Matiere> matieresGroupe = matiereService
                 .getMatieresByGroupeId(groupe.getId());
 
@@ -435,12 +464,19 @@ public class FicheEtudiantService {
             dto.setEcartMoyenneClasse(CalculKpiUtils.arrondir(
                     noteFinale - kpi.getMoyenne()));
         }
+        // A4 : stats au niveau groupe TD (référence = groupe TD)
+        calculerStatsGroupeTD(dto, etudiantId, matiere,
+                anneeAcademiqueId, noteFinale);
 
         return dto;
     }
 
     /**
      * Calcule les rangs et écarts pour la fiche responsable.
+     *
+     * <p>Récupère tous les étudiants de la promotion, calcule
+     * leur moyenne courante (vision pratique) et en déduit
+     * le rang et l'écart à la moyenne de classe.</p>
      *
      * @param fiche             la fiche à compléter
      * @param etudiantId        identifiant de l'étudiant
@@ -457,15 +493,12 @@ public class FicheEtudiantService {
 
         if (fiche.getMoyenneGenerale() == null) return;
 
-        // Récupérer toutes les moyennes de la promotion
-        List<Etudiant> etudiants = etudiantGroupeRepository
-                .findByMatiereIdAndAnneeAcademiqueId(
-                        classeId, anneeAcademiqueId)
-                .stream()
-                .map(eg -> eg.getEtudiant())
-                .distinct()
-                .collect(Collectors.toList());
+        // Récupérer tous les étudiants de la promotion
+        List<Etudiant> etudiants = etudiantRepository
+                .findByPromotionAndAnneeAcademique(
+                        promotionId, anneeAcademiqueId);
 
+        // Calculer la moyenne courante de chaque étudiant
         List<Double> toutesLesMoyennes = new ArrayList<>();
         for (Etudiant e : etudiants) {
             Double moy = calculerMoyenneAnnuelleEtudiant(
@@ -534,12 +567,13 @@ public class FicheEtudiantService {
     }
 
     /**
-     * Calcule la moyenne annuelle d'un étudiant pour une classe.
+     * Calcule la moyenne courante annuelle d'un étudiant
+     * pour une classe (vision pratique).
      *
      * @param etudiantId        identifiant de l'étudiant
      * @param classeId          identifiant de la classe
      * @param anneeAcademiqueId identifiant de l'année académique
-     * @return                  la moyenne annuelle ou null
+     * @return                  la moyenne courante ou null
      */
     private Double calculerMoyenneAnnuelleEtudiant(
             Long etudiantId,
@@ -556,7 +590,7 @@ public class FicheEtudiantService {
         Double moyS2 = calculerMoyenneSemestreEtudiant(
                 etudiantId, matieresS2, anneeAcademiqueId);
 
-        return CalculNoteUtils.calculerMoyenneAnnuelle(moyS1, moyS2);
+        return calculerMoyenneCourante(moyS1, moyS2);
     }
 
     /**
@@ -654,5 +688,72 @@ public class FicheEtudiantService {
         if (score <= 55) return "MODERE";
         if (score <= 75) return "ELEVE";
         return "CRITIQUE";
+    }
+
+    /**
+     * Calcule les statistiques d'un étudiant au niveau
+     * de son groupe TD pour une matière.
+     *
+     * <p>Le groupe de référence est toujours le groupe TD
+     * de l'étudiant pour cette matière. Renseigne le nom
+     * du groupe, l'écart à la moyenne du groupe et le rang
+     * dans le groupe.</p>
+     *
+     * @param dto               le DTO de note à compléter
+     * @param etudiantId        identifiant de l'étudiant
+     * @param matiere           la matière concernée
+     * @param anneeAcademiqueId identifiant de l'année académique
+     * @param noteFinale        note finale de l'étudiant (peut être null)
+     */
+    private void calculerStatsGroupeTD(
+            NoteEtudiantDTO dto,
+            Long etudiantId,
+            Matiere matiere,
+            Long anneeAcademiqueId,
+            Double noteFinale) {
+
+        // 1. Trouver le groupe TD de l'étudiant pour cette matière
+        Optional<org.harold.plateforme.entity.GroupeClasse> groupeTD =
+                etudiantGroupeRepository
+                        .findGroupeByEtudiantMatiereType(
+                                etudiantId,
+                                matiere.getId(),
+                                anneeAcademiqueId,
+                                org.harold.plateforme.entity
+                                        .GroupeClasse.TypeGroupe.TD);
+
+        if (groupeTD.isEmpty()) return;
+
+        dto.setGroupeNom(groupeTD.get().getNom());
+
+        if (noteFinale == null) return;
+
+        // 2. Récupérer tous les étudiants du groupe TD
+        List<Etudiant> etudiantsGroupe = etudiantRepository
+                .findByGroupeClasse(groupeTD.get().getId());
+
+        // 3. Calculer leur note finale pour cette matière
+        List<Double> notesGroupe = new ArrayList<>();
+        for (Etudiant e : etudiantsGroupe) {
+            Double note = noteService.calculerNoteFinale(
+                    e.getId(), matiere.getId(), anneeAcademiqueId);
+            if (note != null) notesGroupe.add(note);
+        }
+
+        if (notesGroupe.isEmpty()) return;
+
+        // 4. Écart à la moyenne du groupe
+        Double moyenneGroupe =
+                CalculKpiUtils.calculerMoyenne(notesGroupe);
+        if (moyenneGroupe != null) {
+            dto.setEcartMoyenneGroupe(CalculKpiUtils.arrondir(
+                    noteFinale - moyenneGroupe));
+        }
+
+        // 5. Rang dans le groupe
+        long rangGroupe = notesGroupe.stream()
+                .filter(n -> n > noteFinale)
+                .count() + 1;
+        dto.setRangGroupe((int) rangGroupe);
     }
 }

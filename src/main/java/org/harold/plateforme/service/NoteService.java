@@ -406,7 +406,7 @@ public class NoteService {
      * @param anneeAcademiqueId identifiant de l'année académique
      * @return                  la note avant rattrapage ou null
      */
-    private Double calculerNoteAvantRattrapage(
+    public Double calculerNoteAvantRattrapage(
             Long etudiantId,
             Long matiereId,
             Long anneeAcademiqueId) {

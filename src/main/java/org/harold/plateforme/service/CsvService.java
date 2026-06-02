@@ -379,6 +379,21 @@ public class CsvService {
      * @param enseignantId      identifiant de l'enseignant
      * @return                  le rapport d'import
      */
+    /**
+     * Importe des notes depuis un fichier Aurion (csv latin-1).
+     *
+     * <p>Colonnes : id.Apprenant, Code.Épreuve,
+     * Libellé.Épreuve, Note numérique...
+     * id.Apprenant = numeroEtudiant.
+     * Encodage latin-1, séparateur point-virgule,
+     * note avec virgule décimale.</p>
+     *
+     * @param fichier           le fichier csv
+     * @param matiereId         identifiant de la matière
+     * @param anneeAcademiqueId identifiant de l'année académique
+     * @param enseignantId      identifiant de l'enseignant
+     * @return                  le rapport d'import
+     */
     private CsvImportResultDTO importerNotesAurion(
             MultipartFile fichier,
             Long matiereId,
@@ -396,17 +411,21 @@ public class CsvService {
         int nbErreurs = 0;
 
         avertissements.add(
-                "Encodage latin-1 détecté automatiquement");
+                "Encodage latin-1 et séparateur ';' détectés");
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(
                         fichier.getInputStream(),
-                        Charset.forName("latin-1")));
+                        Charset.forName("iso-8859-1")));
              CSVParser parser = CSVFormat.DEFAULT
+                     .withDelimiter(';')
                      .withFirstRecordAsHeader()
-                     .withIgnoreHeaderCase()
                      .withTrim()
                      .parse(reader)) {
+
+            // Construire l'index normalisé des colonnes (approche C)
+            Map<String, Integer> indexColonnes =
+                    construireIndexColonnes(parser);
 
             for (CSVRecord record : parser) {
                 nbLues++;
@@ -414,15 +433,13 @@ public class CsvService {
                         (int) record.getRecordNumber() + 1;
 
                 try {
-                    // Colonnes Aurion
-                    String numeroEtudiant = getChampMapped(
-                            record, "id.apprenant",
-                            "numeroetudiants", "NOTES");
-                    String noteStr = getChampMapped(
-                            record, "note numerique",
-                            "note.valeur", "NOTES");
-                    String nonNote = getChampOptional(
-                            record, "non note");
+                    // Lecture robuste via index normalisé
+                    String numeroEtudiant = lireColonne(
+                            record, indexColonnes, "id.Apprenant");
+                    String noteStr = lireColonne(
+                            record, indexColonnes, "Note numérique");
+                    String nonNote = lireColonne(
+                            record, indexColonnes, "Non noté");
 
                     // Vérifier si non noté
                     if ("vrai".equalsIgnoreCase(nonNote) ||
@@ -434,12 +451,16 @@ public class CsvService {
                         continue;
                     }
 
+                    // Note vide = absent ou non saisi → ignoré
                     if (noteStr == null || noteStr.isEmpty()) {
+                        avertissements.add("Ligne " + numeroLigne
+                                + " : note vide pour "
+                                + numeroEtudiant + " — ignorée");
                         nbIgnorees++;
                         continue;
                     }
 
-                    // Convertir la note
+                    // Convertir la note (virgule → point)
                     Double valeur = parseNote(noteStr);
                     if (valeur == null) {
                         erreurs.add("Ligne " + numeroLigne
@@ -791,4 +812,90 @@ public class CsvService {
         rapport.setAvertissements(avertissements);
         rapport.setColonnesNonReconnues(new ArrayList<>());
     }
+    /**
+     * Normalise un nom de colonne pour la comparaison.
+     *
+     * <p>Met en minuscules, retire les accents et les espaces
+     * superflus. Permet de comparer des noms de colonnes
+     * indépendamment de la casse et des accents
+     * (ex: "Note numérique" -> "note numerique").</p>
+     *
+     * @param texte le texte à normaliser
+     * @return      le texte normalisé sans accent ni casse
+     */
+    private String normaliser(String texte) {
+        if (texte == null) return "";
+        // Décomposer les caractères accentués (é -> e + accent)
+        String sansAccent = java.text.Normalizer
+                .normalize(texte, java.text.Normalizer.Form.NFD)
+                // Supprimer les marques d'accent
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        return sansAccent.toLowerCase().trim();
+    }
+    /**
+     * Construit une table associant chaque nom de colonne
+     * normalisé à son index dans le CSV.
+     *
+     * <p>Permet une lecture robuste insensible à la casse
+     * et aux accents, tout en restant tolérante à un
+     * éventuel réordonnancement des colonnes.</p>
+     *
+     * @param parser    le parser CSV (en-tête déjà lu)
+     * @return          map nom normalisé -> index de colonne
+     */
+    private Map<String, Integer> construireIndexColonnes(
+            CSVParser parser) {
+        Map<String, Integer> index = new HashMap<>();
+        Map<String, Integer> headerMap = parser.getHeaderMap();
+        if (headerMap != null) {
+            for (Map.Entry<String, Integer> entry
+                    : headerMap.entrySet()) {
+                index.put(normaliser(entry.getKey()),
+                        entry.getValue());
+            }
+        }
+        return index;
+    }
+    /**
+     * Lit la valeur d'une colonne dans un enregistrement CSV.
+     *
+     * <p>Cherche d'abord dans le dictionnaire de mapping
+     * (MappingCsv) pour trouver un éventuel synonyme,
+     * puis utilise l'index normalisé des colonnes.
+     * Insensible à la casse et aux accents.</p>
+     *
+     * @param record        l'enregistrement CSV courant
+     * @param indexColonnes la table nom normalisé -> index
+     * @param nomColonne    le nom de colonne recherché
+     * @return              la valeur ou null si introuvable
+     */
+    private String lireColonne(
+            CSVRecord record,
+            Map<String, Integer> indexColonnes,
+            String nomColonne) {
+
+        String cle = normaliser(nomColonne);
+
+        // 1. Chercher dans le dictionnaire de synonymes
+        Optional<MappingCsv> mapping = mappingCsvRepository
+                .findByColonneSourceIgnoreCase(nomColonne);
+        if (mapping.isPresent()) {
+            String synonyme = normaliser(
+                    mapping.get().getChampInterne());
+            if (indexColonnes.containsKey(synonyme)) {
+                cle = synonyme;
+            }
+        }
+
+        // 2. Lire via l'index normalisé
+        Integer idx = indexColonnes.get(cle);
+        if (idx == null || idx >= record.size()) {
+            return null;
+        }
+        String valeur = record.get(idx);
+        return (valeur != null && !valeur.trim().isEmpty())
+                ? valeur.trim()
+                : null;
+    }
+
 }

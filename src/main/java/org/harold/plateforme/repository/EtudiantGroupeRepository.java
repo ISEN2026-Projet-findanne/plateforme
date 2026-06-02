@@ -1,4 +1,5 @@
 package org.harold.plateforme.repository;
+import org.harold.plateforme.entity.GroupeClasse;
 
 import org.harold.plateforme.entity.EtudiantGroupe;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -46,4 +47,16 @@ public interface EtudiantGroupeRepository extends JpaRepository<EtudiantGroupe, 
     List<EtudiantGroupe> findByMatiereIdAndAnneeAcademiqueId(
             @Param("matiereId") Long matiereId,
             @Param("anneeAcademiqueId") Long anneeAcademiqueId);
+    // Trouver le groupe d'un type donné (ex: TD) d'un étudiant
+    // pour une matière et une année académique
+    @Query("SELECT eg.groupeClasse FROM EtudiantGroupe eg " +
+            "WHERE eg.etudiant.id = :etudiantId " +
+            "AND eg.groupeClasse.matiere.id = :matiereId " +
+            "AND eg.groupeClasse.anneeAcademique.id = :anneeAcademiqueId " +
+            "AND eg.groupeClasse.type = :type")
+    Optional<GroupeClasse> findGroupeByEtudiantMatiereType(
+            @Param("etudiantId") Long etudiantId,
+            @Param("matiereId") Long matiereId,
+            @Param("anneeAcademiqueId") Long anneeAcademiqueId,
+            @Param("type") GroupeClasse.TypeGroupe type);
 }
