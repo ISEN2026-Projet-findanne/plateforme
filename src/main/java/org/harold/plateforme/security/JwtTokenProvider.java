@@ -43,28 +43,6 @@ public class JwtTokenProvider {
                 jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * Génère un access token JWT pour un utilisateur.
-     *
-     * <p>Le token contient l'email comme subject
-     * et expire après jwt.expiration millisecondes (24h).</p>
-     *
-     * @param email     email de l'utilisateur
-     * @param role      rôle de l'utilisateur
-     * @return          le token JWT signé
-     */
-    public String genererAccessToken(String email, String role) {
-        Date maintenant = new Date();
-        Date expiration = new Date(maintenant.getTime() + jwtExpiration);
-
-        return Jwts.builder()
-                .subject(email)
-                .claim("role", role)
-                .issuedAt(maintenant)
-                .expiration(expiration)
-                .signWith(getSigningKey())
-                .compact();
-    }
 
     /**
      * Génère un refresh token JWT pour un utilisateur.
@@ -140,5 +118,41 @@ public class JwtTokenProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+    /**
+     * Génère un access token JWT pour un utilisateur.
+     *
+     * <p>Le token contient l'email comme subject, ainsi que
+     * le rôle et l'id de l'utilisateur comme claims.
+     * Il expire après jwt.expiration millisecondes (24h).</p>
+     *
+     * @param email     email de l'utilisateur
+     * @param role      rôle de l'utilisateur
+     * @param userId    identifiant de l'utilisateur
+     * @return          le token JWT signé
+     */
+    public String genererAccessToken(
+            String email, String role, Long userId) {
+        Date maintenant = new Date();
+        Date expiration = new Date(maintenant.getTime() + jwtExpiration);
+
+        return Jwts.builder()
+                .subject(email)
+                .claim("role", role)
+                .claim("userId", userId)
+                .issuedAt(maintenant)
+                .expiration(expiration)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
+     * Extrait l'identifiant utilisateur depuis un token JWT.
+     *
+     * @param token     le token JWT
+     * @return          l'id de l'utilisateur contenu dans le token
+     */
+    public Long getUserIdDepuisToken(String token) {
+        return getClaims(token).get("userId", Long.class);
     }
 }

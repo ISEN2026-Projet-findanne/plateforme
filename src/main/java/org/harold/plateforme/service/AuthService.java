@@ -70,7 +70,8 @@ public class AuthService {
         // 4. Générer les tokens
         String accessToken = jwtTokenProvider.genererAccessToken(
                 utilisateur.getEmail(),
-                utilisateur.getRole().name());
+                utilisateur.getRole().name(),
+                utilisateur.getId());
         String refreshToken = jwtTokenProvider.genererRefreshToken(
                 utilisateur.getEmail());
 
@@ -120,7 +121,8 @@ public class AuthService {
         // 5. Générer un nouvel access token
         String nouvelAccessToken = jwtTokenProvider.genererAccessToken(
                 utilisateur.getEmail(),
-                utilisateur.getRole().name());
+                utilisateur.getRole().name(),
+                utilisateur.getId());
 
         // 6. Retourner la réponse avec le nouveau token
         return new LoginResponse(
