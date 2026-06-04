@@ -12,6 +12,7 @@ import org.harold.plateforme.mapper.NotificationMapper;
 import org.harold.plateforme.repository.AlerteRepository;
 import org.harold.plateforme.repository.InscriptionRepository;
 import org.harold.plateforme.repository.NotificationRepository;
+import org.harold.plateforme.exception.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,10 +100,16 @@ public class AlerteService {
     /**
      * Marque une notification comme lue.
      *
+     * <p>Vérifie que la notification appartient bien
+     * à l'utilisateur avant de la marquer.</p>
+     *
      * @param notificationId    identifiant de la notification
      * @param utilisateurId     identifiant de l'utilisateur
      * @throws ResourceNotFoundException    si la notification
      *                                      n'existe pas
+     * @throws AccessDeniedException        si la notification
+     *                                      n'appartient pas
+     *                                      à l'utilisateur
      */
     @Transactional
     public void marquerCommeLue(
@@ -113,6 +120,13 @@ public class AlerteService {
                 .findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Notification", "id", notificationId));
+
+        // Vérifier que la notification appartient à l'utilisateur
+        if (!notification.getUtilisateur().getId()
+                .equals(utilisateurId)) {
+            throw new AccessDeniedException(
+                    "Cette notification ne vous appartient pas");
+        }
 
         if (!notification.isLue()) {
             notification.setLue(true);
