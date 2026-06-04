@@ -12,6 +12,7 @@ import org.harold.plateforme.dto.matiere.MatiereUpdateDTO;
 import org.harold.plateforme.dto.matiere.TypeEvaluationCreateDTO;
 import org.harold.plateforme.dto.matiere.TypeEvaluationDTO;
 import org.harold.plateforme.dto.matiere.TypeEvaluationUpdateDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.MatiereService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -30,7 +30,8 @@ import java.util.List;
  * Controller de gestion des matières.
  *
  * <p>Gère les groupes de matières, les matières
- * et les types d'évaluation.</p>
+ * et les types d'évaluation. L'identité de l'utilisateur
+ * est extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -48,15 +49,14 @@ public class MatiereController {
      * Crée un nouveau groupe de matières.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO du groupe créé
      */
     @PostMapping("/groupes")
     public ResponseEntity<GroupeMatieresDTO> creerGroupe(
             @Valid @RequestBody GroupeMatieresCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(matiereService.creerGroupeMatieres(
@@ -68,7 +68,6 @@ public class MatiereController {
      *
      * @param id        identifiant du groupe
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO du groupe modifié
      */
@@ -76,8 +75,8 @@ public class MatiereController {
     public ResponseEntity<GroupeMatieresDTO> modifierGroupe(
             @PathVariable Long id,
             @Valid @RequestBody GroupeMatieresUpdateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(
                 matiereService.modifierGroupeMatieres(
                         id, dto, adminId,
@@ -103,15 +102,14 @@ public class MatiereController {
      * Crée une nouvelle matière.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO de la matière créée
      */
     @PostMapping
     public ResponseEntity<MatiereDTO> creer(
             @Valid @RequestBody MatiereCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(matiereService.creerMatiere(
@@ -123,7 +121,6 @@ public class MatiereController {
      *
      * @param id        identifiant de la matière
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO de la matière modifiée
      */
@@ -131,8 +128,8 @@ public class MatiereController {
     public ResponseEntity<MatiereDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody MatiereUpdateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(matiereService.modifierMatiere(
                 id, dto, adminId, request.getRemoteAddr()));
     }
@@ -197,15 +194,14 @@ public class MatiereController {
      * Crée un type d'évaluation pour une matière.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO du type créé
      */
     @PostMapping("/types-evaluation")
     public ResponseEntity<TypeEvaluationDTO> creerTypeEvaluation(
             @Valid @RequestBody TypeEvaluationCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(matiereService.creerTypeEvaluation(
@@ -217,7 +213,6 @@ public class MatiereController {
      *
      * @param id        identifiant du type
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO du type modifié
      */
@@ -225,8 +220,8 @@ public class MatiereController {
     public ResponseEntity<TypeEvaluationDTO> modifierTypeEvaluation(
             @PathVariable Long id,
             @Valid @RequestBody TypeEvaluationUpdateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(
                 matiereService.modifierTypeEvaluation(
                         id, dto, adminId,

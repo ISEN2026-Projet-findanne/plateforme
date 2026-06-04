@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.promotion.PromotionCreateDTO;
 import org.harold.plateforme.dto.promotion.PromotionDTO;
 import org.harold.plateforme.dto.promotion.PromotionUpdateDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.PromotionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,8 @@ import java.util.List;
  * Controller de gestion des promotions.
  *
  * <p>Gère la création, modification, suppression
- * et consultation des promotions.</p>
+ * et consultation des promotions. L'identité de
+ * l'utilisateur est extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -41,15 +43,14 @@ public class PromotionController {
      * Crée une nouvelle promotion.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO de la promotion créée
      */
     @PostMapping
     public ResponseEntity<PromotionDTO> creer(
             @Valid @RequestBody PromotionCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(promotionService.creer(
@@ -61,7 +62,6 @@ public class PromotionController {
      *
      * @param id        identifiant de la promotion
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO de la promotion modifiée
      */
@@ -69,8 +69,8 @@ public class PromotionController {
     public ResponseEntity<PromotionDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody PromotionUpdateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(promotionService.modifier(
                 id, dto, adminId, request.getRemoteAddr()));
     }
@@ -81,15 +81,14 @@ public class PromotionController {
      * <p>Uniquement si aucun étudiant actif dans la promotion.</p>
      *
      * @param id        identifiant de la promotion
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 204 si suppression réussie
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> supprimer(
             @PathVariable Long id,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         promotionService.supprimer(
                 id, adminId, request.getRemoteAddr());
         return ResponseEntity.noContent().build();

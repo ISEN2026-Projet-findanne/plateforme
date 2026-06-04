@@ -3,6 +3,7 @@ package org.harold.plateforme.controller;
 import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.etudiant.FicheEtudiantEnseignantDTO;
 import org.harold.plateforme.dto.etudiant.FicheEtudiantResponsableDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.FicheEtudiantService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Expose deux types de fiches selon le rôle :
  * fiche complète pour le responsable pédagogique
- * et fiche limitée à une matière pour l'enseignant.</p>
+ * et fiche limitée à une matière pour l'enseignant.
+ * L'identité de l'enseignant est extraite du token JWT.</p>
  *
  * @author Harold
  * @version 1.0
@@ -58,13 +60,13 @@ public class FicheEtudiantController {
      * Récupère la fiche d'un étudiant pour un enseignant.
      *
      * <p>Limitée à la matière de l'enseignant :
-     * notes, rang, KPI de la classe et remarques.</p>
+     * notes, rang, KPI de la classe et remarques.
+     * L'enseignant est identifié via le token JWT.</p>
      *
      * @param etudiantId        identifiant de l'étudiant
      * @param matiereId         identifiant de la matière
      * @param promotionId       identifiant de la promotion
      * @param anneeAcademiqueId identifiant de l'année académique
-     * @param enseignantId      identifiant de l'enseignant connecté
      * @return                  HTTP 200 avec la fiche enseignant
      */
     @GetMapping("/enseignant/{etudiantId}")
@@ -72,8 +74,8 @@ public class FicheEtudiantController {
             @PathVariable Long etudiantId,
             @RequestParam Long matiereId,
             @RequestParam Long promotionId,
-            @RequestParam Long anneeAcademiqueId,
-            @RequestParam Long enseignantId) {
+            @RequestParam Long anneeAcademiqueId) {
+        Long enseignantId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(
                 ficheEtudiantService.getFicheEnseignant(
                         etudiantId, matiereId,

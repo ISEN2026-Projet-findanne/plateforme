@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.csv.CsvImportResultDTO;
 import org.harold.plateforme.dto.csv.CsvMappingDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.CsvService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
  * <p>Gère l'import des étudiants et des notes
  * depuis les fichiers CSV et XLSX.
  * Supporte les formats THEIA (xlsx) et Aurion (csv latin-1)
- * pour les notes.</p>
+ * pour les notes. L'identité de l'enseignant qui importe
+ * est extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -45,7 +47,7 @@ public class CsvController {
      */
     @PostMapping("/etudiants")
     public ResponseEntity<CsvImportResultDTO> importerEtudiants(
-            @RequestParam MultipartFile fichier,
+            @RequestParam("fichier") MultipartFile fichier,
             @RequestParam Long promotionId,
             @RequestParam Long anneeAcademiqueId) {
         return ResponseEntity.ok(
@@ -58,20 +60,20 @@ public class CsvController {
      * Importe des notes depuis un fichier THEIA ou Aurion.
      *
      * <p>Détecte automatiquement le format du fichier :
-     * THEIA (.xlsx) ou Aurion (.csv latin-1).</p>
+     * THEIA (.xlsx) ou Aurion (.csv latin-1).
+     * L'enseignant est identifié via le token JWT.</p>
      *
      * @param fichier           le fichier à importer
      * @param matiereId         identifiant de la matière
      * @param anneeAcademiqueId identifiant de l'année académique
-     * @param enseignantId      identifiant de l'enseignant
      * @return                  HTTP 200 avec le rapport d'import
      */
     @PostMapping("/notes")
     public ResponseEntity<CsvImportResultDTO> importerNotes(
-            @RequestParam MultipartFile fichier,
+            @RequestParam("fichier") MultipartFile fichier,
             @RequestParam Long matiereId,
-            @RequestParam Long anneeAcademiqueId,
-            @RequestParam Long enseignantId) {
+            @RequestParam Long anneeAcademiqueId) {
+        Long enseignantId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(
                 csvService.importerNotes(
                         fichier, matiereId,

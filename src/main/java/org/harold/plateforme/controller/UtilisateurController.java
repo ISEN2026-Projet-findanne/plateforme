@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.utilisateur.UtilisateurCreateDTO;
 import org.harold.plateforme.dto.utilisateur.UtilisateurDTO;
 import org.harold.plateforme.dto.utilisateur.UtilisateurUpdateDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.UtilisateurService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -25,7 +25,8 @@ import java.util.List;
  *
  * <p>Accessible uniquement par l'administrateur.
  * Gère la création, modification et consultation
- * des comptes utilisateurs.</p>
+ * des comptes utilisateurs. L'identité de l'admin
+ * est extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -41,15 +42,14 @@ public class UtilisateurController {
      * Crée un nouvel utilisateur.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO de l'utilisateur créé
      */
     @PostMapping
     public ResponseEntity<UtilisateurDTO> creer(
             @Valid @RequestBody UtilisateurCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(utilisateurService.creer(
@@ -61,7 +61,6 @@ public class UtilisateurController {
      *
      * @param id        identifiant de l'utilisateur à modifier
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO de l'utilisateur modifié
      */
@@ -69,8 +68,8 @@ public class UtilisateurController {
     public ResponseEntity<UtilisateurDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody UtilisateurUpdateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(utilisateurService.modifier(
                 id, dto, adminId, request.getRemoteAddr()));
     }

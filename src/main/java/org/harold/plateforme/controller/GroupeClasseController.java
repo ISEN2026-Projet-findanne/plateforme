@@ -8,6 +8,7 @@ import org.harold.plateforme.dto.groupe.AssignationEtudiantDTO;
 import org.harold.plateforme.dto.groupe.GroupeClasseCreateDTO;
 import org.harold.plateforme.dto.groupe.GroupeClasseDTO;
 import org.harold.plateforme.dto.groupe.GroupeClasseUpdateDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.GroupeClasseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +28,8 @@ import java.util.List;
  * Controller de gestion des groupes TD/TP/CM.
  *
  * <p>Gère la création et modification des groupes,
- * l'assignation des étudiants et des enseignants.</p>
+ * l'assignation des étudiants et des enseignants.
+ * L'identité de l'utilisateur est extraite du token JWT.</p>
  *
  * @author Harold
  * @version 1.0
@@ -43,15 +45,14 @@ public class GroupeClasseController {
      * Crée un nouveau groupe TD/TP/CM.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO du groupe créé
      */
     @PostMapping
     public ResponseEntity<GroupeClasseDTO> creer(
             @Valid @RequestBody GroupeClasseCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(groupeClasseService.creer(
@@ -63,7 +64,6 @@ public class GroupeClasseController {
      *
      * @param id        identifiant du groupe
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO du groupe modifié
      */
@@ -71,8 +71,8 @@ public class GroupeClasseController {
     public ResponseEntity<GroupeClasseDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody GroupeClasseUpdateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(groupeClasseService.modifier(
                 id, dto, adminId, request.getRemoteAddr()));
     }
@@ -81,15 +81,14 @@ public class GroupeClasseController {
      * Assigne un étudiant à un groupe.
      *
      * @param dto       les données d'assignation
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 si assignation réussie
      */
     @PostMapping("/assigner-etudiant")
     public ResponseEntity<Void> assignerEtudiant(
             @Valid @RequestBody AssignationEtudiantDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         groupeClasseService.assignerEtudiant(
                 dto, adminId, request.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -100,7 +99,6 @@ public class GroupeClasseController {
      *
      * @param groupeId      identifiant du groupe
      * @param etudiantId    identifiant de l'étudiant
-     * @param adminId       identifiant de l'admin connecté
      * @param request       la requête HTTP pour récupérer l'IP
      * @return              HTTP 204 si retrait réussi
      */
@@ -108,8 +106,8 @@ public class GroupeClasseController {
     public ResponseEntity<Void> retirerEtudiant(
             @PathVariable Long groupeId,
             @PathVariable Long etudiantId,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         groupeClasseService.retirerEtudiant(
                 etudiantId, groupeId,
                 adminId, request.getRemoteAddr());
@@ -120,15 +118,14 @@ public class GroupeClasseController {
      * Assigne un enseignant à un groupe pour une matière.
      *
      * @param dto       les données d'assignation
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 si assignation réussie
      */
     @PostMapping("/assigner-enseignant")
     public ResponseEntity<Void> assignerEnseignant(
             @Valid @RequestBody AssignationEnseignantDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         groupeClasseService.assignerEnseignant(
                 dto, adminId, request.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.CREATED).build();

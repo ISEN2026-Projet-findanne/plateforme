@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.note.NoteCreateDTO;
 import org.harold.plateforme.dto.note.NoteDTO;
 import org.harold.plateforme.dto.note.NoteUpdateDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.NoteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,8 @@ import java.util.List;
  *
  * <p>Gère la saisie, modification et consultation des notes.
  * La saisie et la modification sont réservées
- * à l'enseignant assigné à la matière.</p>
+ * à l'enseignant assigné à la matière. L'identité de
+ * l'enseignant est extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -40,16 +42,15 @@ public class NoteController {
     /**
      * Saisit une note pour un étudiant.
      *
-     * @param dto           les données de la note
-     * @param enseignantId  identifiant de l'enseignant connecté
-     * @param request       la requête HTTP pour récupérer l'IP
-     * @return              HTTP 201 avec le DTO de la note créée
+     * @param dto       les données de la note
+     * @param request   la requête HTTP pour récupérer l'IP
+     * @return          HTTP 201 avec le DTO de la note créée
      */
     @PostMapping
     public ResponseEntity<NoteDTO> saisir(
             @Valid @RequestBody NoteCreateDTO dto,
-            @RequestParam Long enseignantId,
             HttpServletRequest request) {
+        Long enseignantId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(noteService.saisir(
@@ -60,18 +61,17 @@ public class NoteController {
     /**
      * Modifie une note existante.
      *
-     * @param id            identifiant de la note
-     * @param dto           les nouvelles données
-     * @param enseignantId  identifiant de l'enseignant connecté
-     * @param request       la requête HTTP pour récupérer l'IP
-     * @return              HTTP 200 avec le DTO de la note modifiée
+     * @param id        identifiant de la note
+     * @param dto       les nouvelles données
+     * @param request   la requête HTTP pour récupérer l'IP
+     * @return          HTTP 200 avec le DTO de la note modifiée
      */
     @PutMapping("/{id}")
     public ResponseEntity<NoteDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody NoteUpdateDTO dto,
-            @RequestParam Long enseignantId,
             HttpServletRequest request) {
+        Long enseignantId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(noteService.modifier(
                 id, dto, enseignantId,
                 request.getRemoteAddr()));

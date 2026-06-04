@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.classe.ClasseCreateDTO;
 import org.harold.plateforme.dto.classe.ClasseDTO;
 import org.harold.plateforme.dto.classe.ClassePromotionDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.ClasseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,8 @@ import java.util.List;
  * Controller de gestion des classes.
  *
  * <p>Gère la création et modification des classes statiques
- * ainsi que leur attribution aux promotions.</p>
+ * ainsi que leur attribution aux promotions. L'identité de
+ * l'utilisateur est extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -40,15 +42,14 @@ public class ClasseController {
      * Crée une nouvelle classe statique.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO de la classe créée
      */
     @PostMapping
     public ResponseEntity<ClasseDTO> creer(
             @Valid @RequestBody ClasseCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(classeService.creer(
@@ -60,7 +61,6 @@ public class ClasseController {
      *
      * @param id        identifiant de la classe
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO de la classe modifiée
      */
@@ -68,8 +68,8 @@ public class ClasseController {
     public ResponseEntity<ClasseDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody ClasseCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(classeService.modifier(
                 id, dto, adminId, request.getRemoteAddr()));
     }
@@ -79,15 +79,14 @@ public class ClasseController {
      * pour une année académique.
      *
      * @param dto       les données d'attribution
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO de l'attribution
      */
     @PostMapping("/attribution")
     public ResponseEntity<ClassePromotionDTO> attribuer(
             @Valid @RequestBody ClassePromotionDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(classeService.attribuer(

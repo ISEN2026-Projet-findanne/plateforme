@@ -7,6 +7,7 @@ import org.harold.plateforme.dto.etudiant.EtudiantCreateDTO;
 import org.harold.plateforme.dto.etudiant.EtudiantDTO;
 import org.harold.plateforme.dto.etudiant.EtudiantUpdateDTO;
 import org.harold.plateforme.entity.Inscription;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.EtudiantService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,9 @@ import java.util.List;
  * Controller de gestion des étudiants.
  *
  * <p>Gère la création, modification et consultation
- * des étudiants ainsi que leur mobilité entre promotions.</p>
+ * des étudiants ainsi que leur mobilité entre promotions.
+ * L'identité de l'utilisateur qui effectue l'action est
+ * extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -40,16 +43,15 @@ public class EtudiantController {
     /**
      * Crée un nouvel étudiant et son inscription.
      *
-     * @param dto           les données de création
-     * @param utilisateurId identifiant de l'utilisateur connecté
-     * @param request       la requête HTTP pour récupérer l'IP
-     * @return              HTTP 201 avec le DTO de l'étudiant créé
+     * @param dto       les données de création
+     * @param request   la requête HTTP pour récupérer l'IP
+     * @return          HTTP 201 avec le DTO de l'étudiant créé
      */
     @PostMapping
     public ResponseEntity<EtudiantDTO> creer(
             @Valid @RequestBody EtudiantCreateDTO dto,
-            @RequestParam Long utilisateurId,
             HttpServletRequest request) {
+        Long utilisateurId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(etudiantService.creer(
@@ -60,18 +62,17 @@ public class EtudiantController {
     /**
      * Modifie un étudiant existant.
      *
-     * @param id            identifiant de l'étudiant
-     * @param dto           les nouvelles données
-     * @param utilisateurId identifiant de l'utilisateur connecté
-     * @param request       la requête HTTP pour récupérer l'IP
-     * @return              HTTP 200 avec le DTO de l'étudiant modifié
+     * @param id        identifiant de l'étudiant
+     * @param dto       les nouvelles données
+     * @param request   la requête HTTP pour récupérer l'IP
+     * @return          HTTP 200 avec le DTO de l'étudiant modifié
      */
     @PutMapping("/{id}")
     public ResponseEntity<EtudiantDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody EtudiantUpdateDTO dto,
-            @RequestParam Long utilisateurId,
             HttpServletRequest request) {
+        Long utilisateurId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(etudiantService.modifier(
                 id, dto, utilisateurId,
                 request.getRemoteAddr()));
@@ -88,7 +89,6 @@ public class EtudiantController {
      * @param anneeAcademiqueId année académique
      * @param niveau            nouveau niveau
      * @param motif             motif du changement
-     * @param utilisateurId     identifiant de l'utilisateur connecté
      * @param request           la requête HTTP pour récupérer l'IP
      * @return                  HTTP 200 avec le DTO mis à jour
      */
@@ -99,8 +99,8 @@ public class EtudiantController {
             @RequestParam Long anneeAcademiqueId,
             @RequestParam String niveau,
             @RequestParam(required = false) String motif,
-            @RequestParam Long utilisateurId,
             HttpServletRequest request) {
+        Long utilisateurId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(etudiantService.changerPromotion(
                 id, promotionId, anneeAcademiqueId,
                 niveau, motif, utilisateurId,

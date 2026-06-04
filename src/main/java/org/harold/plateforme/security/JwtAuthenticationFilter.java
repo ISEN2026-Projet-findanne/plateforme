@@ -64,23 +64,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 3. Valider le token
             if (jwtTokenProvider.validerToken(token)) {
 
-                // 4. Extraire l'email
-                String email = jwtTokenProvider
-                        .getEmailDepuisToken(token);
+                // 4. Extraire les infos du token
+                String email = jwtTokenProvider.getEmailDepuisToken(token);
+                String role = jwtTokenProvider.getRoleDepuisToken(token);
+                Long userId = jwtTokenProvider.getUserIdDepuisToken(token);
 
-                // 5. Charger l'utilisateur
-                UserDetails userDetails = userDetailsService
-                        .loadUserByUsername(email);
+                // 5. Construire le principal (Piste B : id dans le contexte)
+                UtilisateurPrincipal principal =
+                        new UtilisateurPrincipal(userId, email, role);
 
                 // 6. Créer l'authentification
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails,
+                                principal,
                                 null,
-                                userDetails.getAuthorities());
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request));
+                                principal.getAuthorities());
 
                 // 7. Placer dans le contexte de sécurité
                 SecurityContextHolder.getContext()

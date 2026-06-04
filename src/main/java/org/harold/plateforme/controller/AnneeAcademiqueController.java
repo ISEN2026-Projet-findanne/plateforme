@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.dto.anneeacademique.AnneeAcademiqueCreateDTO;
 import org.harold.plateforme.dto.anneeacademique.AnneeAcademiqueDTO;
+import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.AnneeAcademiqueService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -23,8 +23,9 @@ import java.util.List;
  * Controller de gestion des années académiques.
  *
  * <p>Gère la création, modification et activation
- * des années académiques.
- * La création et l'activation sont réservées à l'admin.</p>
+ * des années académiques. La création et l'activation
+ * sont réservées à l'admin. L'identité de l'utilisateur
+ * est extraite du token JWT via SecurityUtils.</p>
  *
  * @author Harold
  * @version 1.0
@@ -40,15 +41,14 @@ public class AnneeAcademiqueController {
      * Crée une nouvelle année académique.
      *
      * @param dto       les données de création
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 201 avec le DTO de l'année créée
      */
     @PostMapping
     public ResponseEntity<AnneeAcademiqueDTO> creer(
             @Valid @RequestBody AnneeAcademiqueCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(anneeAcademiqueService.creer(
@@ -60,7 +60,6 @@ public class AnneeAcademiqueController {
      *
      * @param id        identifiant de l'année à modifier
      * @param dto       les nouvelles données
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO de l'année modifiée
      */
@@ -68,8 +67,8 @@ public class AnneeAcademiqueController {
     public ResponseEntity<AnneeAcademiqueDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody AnneeAcademiqueCreateDTO dto,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(anneeAcademiqueService.modifier(
                 id, dto, adminId, request.getRemoteAddr()));
     }
@@ -81,15 +80,14 @@ public class AnneeAcademiqueController {
      * Une seule année peut être active à la fois.</p>
      *
      * @param id        identifiant de l'année à activer
-     * @param adminId   identifiant de l'admin connecté
      * @param request   la requête HTTP pour récupérer l'IP
      * @return          HTTP 200 avec le DTO de l'année activée
      */
     @PutMapping("/{id}/activer")
     public ResponseEntity<AnneeAcademiqueDTO> activer(
             @PathVariable Long id,
-            @RequestParam Long adminId,
             HttpServletRequest request) {
+        Long adminId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(anneeAcademiqueService.activer(
                 id, adminId, request.getRemoteAddr()));
     }
