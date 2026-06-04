@@ -203,7 +203,7 @@ public class CalculNoteUtils {
             java.util.List<Double> moyennesGroupes) {
 
         if (moyennesGroupes == null || moyennesGroupes.isEmpty()) return null;
-        if (moyennesGroupes.contains(null)) return null;
+        if (moyennesGroupes.stream().anyMatch(m -> m == null)) return null;
         return moyennesGroupes.stream().allMatch(m -> m >= 10.0);
     }
 
