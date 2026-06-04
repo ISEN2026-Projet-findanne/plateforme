@@ -12,6 +12,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.GroupeClasseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +50,7 @@ public class GroupeClasseController {
      * @return          HTTP 201 avec le DTO du groupe créé
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GroupeClasseDTO> creer(
             @Valid @RequestBody GroupeClasseCreateDTO dto,
             HttpServletRequest request) {
@@ -68,6 +70,7 @@ public class GroupeClasseController {
      * @return          HTTP 200 avec le DTO du groupe modifié
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GroupeClasseDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody GroupeClasseUpdateDTO dto,
@@ -85,6 +88,7 @@ public class GroupeClasseController {
      * @return          HTTP 201 si assignation réussie
      */
     @PostMapping("/assigner-etudiant")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> assignerEtudiant(
             @Valid @RequestBody AssignationEtudiantDTO dto,
             HttpServletRequest request) {
@@ -103,6 +107,7 @@ public class GroupeClasseController {
      * @return              HTTP 204 si retrait réussi
      */
     @DeleteMapping("/{groupeId}/etudiants/{etudiantId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> retirerEtudiant(
             @PathVariable Long groupeId,
             @PathVariable Long etudiantId,
@@ -122,6 +127,7 @@ public class GroupeClasseController {
      * @return          HTTP 201 si assignation réussie
      */
     @PostMapping("/assigner-enseignant")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> assignerEnseignant(
             @Valid @RequestBody AssignationEnseignantDTO dto,
             HttpServletRequest request) {
@@ -138,6 +144,7 @@ public class GroupeClasseController {
      * @return      HTTP 200 avec le DTO du groupe
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<GroupeClasseDTO> getById(
             @PathVariable Long id) {
         return ResponseEntity.ok(groupeClasseService.getById(id));
@@ -152,6 +159,7 @@ public class GroupeClasseController {
      * @return                  HTTP 200 avec la liste des groupes
      */
     @GetMapping("/matiere/{matiereId}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<GroupeClasseDTO>> getByMatiere(
             @PathVariable Long matiereId,
             @RequestParam Long anneeAcademiqueId) {
@@ -169,6 +177,7 @@ public class GroupeClasseController {
      * @return                  HTTP 200 avec la liste des groupes
      */
     @GetMapping("/etudiant/{etudiantId}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE','ENSEIGNANT')")
     public ResponseEntity<List<GroupeClasseDTO>> getByEtudiant(
             @PathVariable Long etudiantId,
             @RequestParam Long anneeAcademiqueId) {
@@ -178,14 +187,36 @@ public class GroupeClasseController {
     }
 
     /**
-     * Récupère les groupes d'un enseignant
+     * Récupère les groupes de l'enseignant connecté
      * pour une année académique.
      *
-     * @param enseignantId      identifiant de l'enseignant
+     * <p>L'identité provient du token JWT.</p>
+     *
+     * @param anneeAcademiqueId identifiant de l'année académique
+     * @return                  HTTP 200 avec la liste de ses groupes
+     */
+    @GetMapping("/mes-groupes")
+    @PreAuthorize("hasRole('ENSEIGNANT')")
+    public ResponseEntity<List<GroupeClasseDTO>> getMesGroupes(
+            @RequestParam Long anneeAcademiqueId) {
+        Long enseignantId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(
+                groupeClasseService.getByEnseignantAndAnnee(
+                        enseignantId, anneeAcademiqueId));
+    }
+
+    /**
+     * Récupère les groupes d'un enseignant donné
+     * pour une année académique.
+     *
+     * <p>Réservé à l'administrateur et au responsable.</p>
+     *
+     * @param enseignantId      identifiant de l'enseignant ciblé
      * @param anneeAcademiqueId identifiant de l'année académique
      * @return                  HTTP 200 avec la liste des groupes
      */
     @GetMapping("/enseignant/{enseignantId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE','ENSEIGNANT')")
     public ResponseEntity<List<GroupeClasseDTO>> getByEnseignant(
             @PathVariable Long enseignantId,
             @RequestParam Long anneeAcademiqueId) {

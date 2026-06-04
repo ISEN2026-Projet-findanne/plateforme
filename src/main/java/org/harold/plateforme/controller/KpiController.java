@@ -7,6 +7,7 @@ import org.harold.plateforme.dto.kpi.KpiMatiereDTO;
 import org.harold.plateforme.dto.kpi.KpiSemestreDTO;
 import org.harold.plateforme.service.KpiService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +43,7 @@ public class KpiController {
      * @return                  HTTP 200 avec les 8 KPI
      */
     @GetMapping("/matiere/{matiereId}/promotion/{promotionId}")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<KpiMatiereDTO> getKpiMatiereByPromotion(
             @PathVariable Long matiereId,
             @PathVariable Long promotionId,
@@ -61,6 +63,7 @@ public class KpiController {
      * @return                  HTTP 200 avec les 8 KPI
      */
     @GetMapping("/matiere/{matiereId}/groupe/{groupeId}")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<KpiMatiereDTO> getKpiMatiereByGroupe(
             @PathVariable Long matiereId,
             @PathVariable Long groupeId,
@@ -81,6 +84,7 @@ public class KpiController {
      * @return                  HTTP 200 avec les 7 KPI
      */
     @GetMapping("/semestre/{numeroSemestre}/promotion/{promotionId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<KpiSemestreDTO> getKpiSemestreByPromotion(
             @PathVariable Integer numeroSemestre,
             @PathVariable Long promotionId,
@@ -101,6 +105,7 @@ public class KpiController {
      * @return                  HTTP 200 avec les 7 KPI annuels
      */
     @GetMapping("/annuel/promotion/{promotionId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<KpiAnnuelDTO> getKpiAnnuelByPromotion(
             @PathVariable Long promotionId,
             @RequestParam Long classeId,
@@ -120,6 +125,7 @@ public class KpiController {
      * @return                  HTTP 200 avec le DTO de comparaison
      */
     @GetMapping("/comparaison/inter-promos")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<ComparaisonPromoDTO> comparerInterPromos(
             @RequestParam Long matiereId,
             @RequestParam List<Long> promotionIds,
@@ -140,6 +146,7 @@ public class KpiController {
      * @return                      HTTP 200 avec le DTO de comparaison
      */
     @GetMapping("/comparaison/inter-annees")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<ComparaisonPromoDTO> comparerInterAnnees(
             @RequestParam Long matiereId,
             @RequestParam Long promotionId,

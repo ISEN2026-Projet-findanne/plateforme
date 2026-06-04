@@ -6,6 +6,7 @@ import org.harold.plateforme.dto.alerte.NotificationDTO;
 import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.AlerteService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -43,6 +44,7 @@ public class AlerteController {
      * @return  HTTP 200 avec la liste des notifications
      */
     @GetMapping("/notifications")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<List<NotificationDTO>> getNotifications() {
         Long utilisateurId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(
@@ -55,6 +57,7 @@ public class AlerteController {
      * @return  HTTP 200 avec les notifications non lues
      */
     @GetMapping("/notifications/non-lues")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<List<NotificationDTO>> getNotificationsNonLues() {
         Long utilisateurId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(
@@ -72,6 +75,7 @@ public class AlerteController {
      * @return  HTTP 200 avec le nombre de notifications
      */
     @GetMapping("/notifications/nb-non-lues")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<Long> getNbNotificationsNonLues() {
         Long utilisateurId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(
@@ -86,6 +90,7 @@ public class AlerteController {
      * @return      HTTP 200 si mise à jour réussie
      */
     @PutMapping("/notifications/{id}/lue")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<Void> marquerCommeLue(
             @PathVariable Long id) {
         Long utilisateurId = SecurityUtils.getCurrentUserId();
@@ -100,6 +105,7 @@ public class AlerteController {
      * @return  HTTP 200 si mise à jour réussie
      */
     @PutMapping("/notifications/toutes-lues")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<Void> marquerToutesCommeLues() {
         Long utilisateurId = SecurityUtils.getCurrentUserId();
         alerteService.marquerToutesCommeLues(utilisateurId);
@@ -117,6 +123,7 @@ public class AlerteController {
      * @return                  HTTP 200 avec la liste des alertes
      */
     @GetMapping("/critiques/promotion/{promotionId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<List<AlerteDTO>> getAlertesCritiques(
             @PathVariable Long promotionId,
             @RequestParam Long anneeAcademiqueId) {
@@ -133,6 +140,7 @@ public class AlerteController {
      * @return                  HTTP 200 avec le nombre d'alertes
      */
     @GetMapping("/nb-non-lues/promotion/{promotionId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<Long> getNbAlertesNonLues(
             @PathVariable Long promotionId,
             @RequestParam Long anneeAcademiqueId) {

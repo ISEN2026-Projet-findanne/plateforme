@@ -16,6 +16,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.MatiereService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,6 +54,7 @@ public class MatiereController {
      * @return          HTTP 201 avec le DTO du groupe créé
      */
     @PostMapping("/groupes")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GroupeMatieresDTO> creerGroupe(
             @Valid @RequestBody GroupeMatieresCreateDTO dto,
             HttpServletRequest request) {
@@ -72,6 +74,7 @@ public class MatiereController {
      * @return          HTTP 200 avec le DTO du groupe modifié
      */
     @PutMapping("/groupes/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GroupeMatieresDTO> modifierGroupe(
             @PathVariable Long id,
             @Valid @RequestBody GroupeMatieresUpdateDTO dto,
@@ -90,6 +93,7 @@ public class MatiereController {
      * @return          HTTP 200 avec la liste des groupes
      */
     @GetMapping("/groupes/classe/{classeId}")
+    @PreAuthorize("hasAnyRole('ADMIN','Responsable')")
     public ResponseEntity<List<GroupeMatieresDTO>> getGroupesByClasse(
             @PathVariable Long classeId) {
         return ResponseEntity.ok(
@@ -106,6 +110,7 @@ public class MatiereController {
      * @return          HTTP 201 avec le DTO de la matière créée
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MatiereDTO> creer(
             @Valid @RequestBody MatiereCreateDTO dto,
             HttpServletRequest request) {
@@ -125,6 +130,7 @@ public class MatiereController {
      * @return          HTTP 200 avec le DTO de la matière modifiée
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MatiereDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody MatiereUpdateDTO dto,
@@ -141,6 +147,7 @@ public class MatiereController {
      * @return      HTTP 200 avec le DTO de la matière
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE','ENSEIGNANT')")
     public ResponseEntity<MatiereDTO> getById(
             @PathVariable Long id) {
         return ResponseEntity.ok(matiereService.getById(id));
@@ -153,6 +160,7 @@ public class MatiereController {
      * @return          HTTP 200 avec la liste des matières
      */
     @GetMapping("/classe/{classeId}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<MatiereDTO>> getByClasse(
             @PathVariable Long classeId) {
         return ResponseEntity.ok(
@@ -167,6 +175,7 @@ public class MatiereController {
      * @return                  HTTP 200 avec la liste des matières
      */
     @GetMapping("/classe/{classeId}/semestre/{numeroSemestre}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<MatiereDTO>> getByClasseAndSemestre(
             @PathVariable Long classeId,
             @PathVariable Integer numeroSemestre) {
@@ -176,12 +185,32 @@ public class MatiereController {
     }
 
     /**
-     * Récupère les matières d'un enseignant.
+     * Récupère les matières de l'enseignant connecté.
      *
-     * @param enseignantId  identifiant de l'enseignant
+     * <p>L'identité provient du token JWT : l'enseignant
+     * accède uniquement à ses propres matières.</p>
+     *
+     * @return  HTTP 200 avec la liste de ses matières
+     */
+    @GetMapping("/mes-matieres")
+    @PreAuthorize("hasRole('ENSEIGNANT')")
+    public ResponseEntity<List<MatiereDTO>> getMesMatieres() {
+        Long enseignantId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(
+                matiereService.getByEnseignant(enseignantId));
+    }
+
+    /**
+     * Récupère les matières d'un enseignant donné.
+     *
+     * <p>Réservé à l'administrateur et au responsable
+     * pour consulter les matières d'un enseignant précis.</p>
+     *
+     * @param enseignantId  identifiant de l'enseignant ciblé
      * @return              HTTP 200 avec la liste des matières
      */
     @GetMapping("/enseignant/{enseignantId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE','ENSEIGNANT')")
     public ResponseEntity<List<MatiereDTO>> getByEnseignant(
             @PathVariable Long enseignantId) {
         return ResponseEntity.ok(
@@ -198,6 +227,7 @@ public class MatiereController {
      * @return          HTTP 201 avec le DTO du type créé
      */
     @PostMapping("/types-evaluation")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TypeEvaluationDTO> creerTypeEvaluation(
             @Valid @RequestBody TypeEvaluationCreateDTO dto,
             HttpServletRequest request) {
@@ -217,6 +247,7 @@ public class MatiereController {
      * @return          HTTP 200 avec le DTO du type modifié
      */
     @PutMapping("/types-evaluation/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TypeEvaluationDTO> modifierTypeEvaluation(
             @PathVariable Long id,
             @Valid @RequestBody TypeEvaluationUpdateDTO dto,
@@ -235,9 +266,11 @@ public class MatiereController {
      * @return              HTTP 200 avec la liste des types
      */
     @GetMapping("/{matiereId}/types-evaluation")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<TypeEvaluationDTO>> getTypesByMatiere(
             @PathVariable Long matiereId) {
         return ResponseEntity.ok(
                 matiereService.getTypesByMatiere(matiereId));
     }
+
 }

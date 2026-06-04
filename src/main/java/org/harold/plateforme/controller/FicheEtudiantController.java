@@ -6,6 +6,7 @@ import org.harold.plateforme.dto.etudiant.FicheEtudiantResponsableDTO;
 import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.FicheEtudiantService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +46,7 @@ public class FicheEtudiantController {
      * @return                  HTTP 200 avec la fiche complète
      */
     @GetMapping("/responsable/{etudiantId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<FicheEtudiantResponsableDTO> getFicheResponsable(
             @PathVariable Long etudiantId,
             @RequestParam Long classeId,
@@ -70,6 +72,7 @@ public class FicheEtudiantController {
      * @return                  HTTP 200 avec la fiche enseignant
      */
     @GetMapping("/enseignant/{etudiantId}")
+    @PreAuthorize("hasRole('ENSEIGNANT')")
     public ResponseEntity<FicheEtudiantEnseignantDTO> getFicheEnseignant(
             @PathVariable Long etudiantId,
             @RequestParam Long matiereId,

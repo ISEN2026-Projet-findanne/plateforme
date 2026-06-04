@@ -11,6 +11,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.EtudiantService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,6 +49,7 @@ public class EtudiantController {
      * @return          HTTP 201 avec le DTO de l'étudiant créé
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EtudiantDTO> creer(
             @Valid @RequestBody EtudiantCreateDTO dto,
             HttpServletRequest request) {
@@ -68,6 +70,7 @@ public class EtudiantController {
      * @return          HTTP 200 avec le DTO de l'étudiant modifié
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EtudiantDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody EtudiantUpdateDTO dto,
@@ -93,6 +96,7 @@ public class EtudiantController {
      * @return                  HTTP 200 avec le DTO mis à jour
      */
     @PutMapping("/{id}/changer-promotion")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EtudiantDTO> changerPromotion(
             @PathVariable Long id,
             @RequestParam Long promotionId,
@@ -114,6 +118,7 @@ public class EtudiantController {
      * @return      HTTP 200 avec le DTO de l'étudiant
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<EtudiantDTO> getById(
             @PathVariable Long id) {
         return ResponseEntity.ok(etudiantService.getById(id));
@@ -128,6 +133,7 @@ public class EtudiantController {
      * @return                  HTTP 200 avec la liste des étudiants
      */
     @GetMapping("/promotion/{promotionId}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<EtudiantDTO>> getByPromotion(
             @PathVariable Long promotionId,
             @RequestParam Long anneeAcademiqueId) {
@@ -142,6 +148,7 @@ public class EtudiantController {
      * @return          HTTP 200 avec la liste des étudiants trouvés
      */
     @GetMapping("/recherche")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<EtudiantDTO>> rechercher(
             @RequestParam String query) {
         return ResponseEntity.ok(
@@ -155,6 +162,7 @@ public class EtudiantController {
      * @return      HTTP 200 avec la liste des inscriptions
      */
     @GetMapping("/{id}/historique-inscriptions")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<Inscription>> getHistorique(
             @PathVariable Long id) {
         return ResponseEntity.ok(

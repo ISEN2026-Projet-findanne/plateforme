@@ -9,6 +9,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.AnneeAcademiqueService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,6 +46,7 @@ public class AnneeAcademiqueController {
      * @return          HTTP 201 avec le DTO de l'année créée
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AnneeAcademiqueDTO> creer(
             @Valid @RequestBody AnneeAcademiqueCreateDTO dto,
             HttpServletRequest request) {
@@ -64,6 +66,7 @@ public class AnneeAcademiqueController {
      * @return          HTTP 200 avec le DTO de l'année modifiée
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AnneeAcademiqueDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody AnneeAcademiqueCreateDTO dto,
@@ -84,6 +87,7 @@ public class AnneeAcademiqueController {
      * @return          HTTP 200 avec le DTO de l'année activée
      */
     @PutMapping("/{id}/activer")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AnneeAcademiqueDTO> activer(
             @PathVariable Long id,
             HttpServletRequest request) {
@@ -98,6 +102,7 @@ public class AnneeAcademiqueController {
      * @return  HTTP 200 avec la liste des années académiques
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<AnneeAcademiqueDTO>> getAll() {
         return ResponseEntity.ok(anneeAcademiqueService.getAll());
     }
@@ -108,6 +113,7 @@ public class AnneeAcademiqueController {
      * @return  HTTP 200 avec le DTO de l'année active
      */
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<AnneeAcademiqueDTO> getActive() {
         return ResponseEntity.ok(anneeAcademiqueService.getActive());
     }

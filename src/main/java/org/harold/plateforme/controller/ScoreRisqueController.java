@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.harold.plateforme.entity.ScoreRisqueHistorique;
 import org.harold.plateforme.service.ScoreRisqueService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,6 +45,7 @@ public class ScoreRisqueController {
      * @return                  HTTP 200 avec le score calculé
      */
     @PostMapping("/calculer")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<Double> calculer(
             @RequestParam Long etudiantId,
             @RequestParam Long classeId,
@@ -64,6 +66,7 @@ public class ScoreRisqueController {
      *                          ou HTTP 404 si pas encore calculé
      */
     @GetMapping("/etudiant/{etudiantId}/actuel")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<ScoreRisqueHistorique> getScoreActuel(
             @PathVariable Long etudiantId,
             @RequestParam Long anneeAcademiqueId) {
@@ -82,6 +85,7 @@ public class ScoreRisqueController {
      * @return                  HTTP 200 avec la liste des scores
      */
     @GetMapping("/etudiant/{etudiantId}/historique")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<List<ScoreRisqueHistorique>> getHistorique(
             @PathVariable Long etudiantId,
             @RequestParam Long anneeAcademiqueId) {
@@ -102,6 +106,7 @@ public class ScoreRisqueController {
      * @return                  HTTP 200 avec la liste des scores
      */
     @GetMapping("/promotion/{promotionId}/a-risque")
+    @PreAuthorize("hasAnyRole('RESPONSABLE')")
     public ResponseEntity<List<ScoreRisqueHistorique>> getEtudiantsARisque(
             @PathVariable Long promotionId,
             @RequestParam Long anneeAcademiqueId,

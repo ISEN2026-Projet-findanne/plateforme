@@ -10,6 +10,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.PromotionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,6 +48,7 @@ public class PromotionController {
      * @return          HTTP 201 avec le DTO de la promotion créée
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PromotionDTO> creer(
             @Valid @RequestBody PromotionCreateDTO dto,
             HttpServletRequest request) {
@@ -66,6 +68,7 @@ public class PromotionController {
      * @return          HTTP 200 avec le DTO de la promotion modifiée
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PromotionDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody PromotionUpdateDTO dto,
@@ -85,6 +88,7 @@ public class PromotionController {
      * @return          HTTP 204 si suppression réussie
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> supprimer(
             @PathVariable Long id,
             HttpServletRequest request) {
@@ -100,6 +104,7 @@ public class PromotionController {
      * @return  HTTP 200 avec la liste des promotions
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<PromotionDTO>> getAll() {
         return ResponseEntity.ok(promotionService.getAll());
     }
@@ -111,6 +116,7 @@ public class PromotionController {
      * @return      HTTP 200 avec le DTO de la promotion
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<PromotionDTO> getById(
             @PathVariable Long id) {
         return ResponseEntity.ok(promotionService.getById(id));
@@ -123,6 +129,7 @@ public class PromotionController {
      * @return      HTTP 200 avec la liste des promotions trouvées
      */
     @GetMapping("/recherche")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<PromotionDTO>> rechercher(
             @RequestParam String nom) {
         return ResponseEntity.ok(

@@ -7,6 +7,7 @@ import org.harold.plateforme.dto.csv.CsvMappingDTO;
 import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.CsvService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,6 +47,7 @@ public class CsvController {
      * @return                  HTTP 200 avec le rapport d'import
      */
     @PostMapping("/etudiants")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CsvImportResultDTO> importerEtudiants(
             @RequestParam("fichier") MultipartFile fichier,
             @RequestParam Long promotionId,
@@ -69,6 +71,7 @@ public class CsvController {
      * @return                  HTTP 200 avec le rapport d'import
      */
     @PostMapping("/notes")
+    @PreAuthorize("hasRole('ENSEIGNANT')")
     public ResponseEntity<CsvImportResultDTO> importerNotes(
             @RequestParam("fichier") MultipartFile fichier,
             @RequestParam Long matiereId,
@@ -90,6 +93,7 @@ public class CsvController {
      * @return      HTTP 200 si sauvegarde réussie
      */
     @PostMapping("/mapping")
+    @PreAuthorize("hasAnyRole('ADMIN','ENSEIGNANT')")
     public ResponseEntity<Void> sauvegarderMapping(
             @Valid @RequestBody CsvMappingDTO dto) {
         csvService.sauvegarderMapping(dto);

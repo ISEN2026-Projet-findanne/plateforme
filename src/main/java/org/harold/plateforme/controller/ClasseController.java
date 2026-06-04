@@ -10,6 +10,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.ClasseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,6 +47,7 @@ public class ClasseController {
      * @return          HTTP 201 avec le DTO de la classe créée
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ClasseDTO> creer(
             @Valid @RequestBody ClasseCreateDTO dto,
             HttpServletRequest request) {
@@ -65,6 +67,7 @@ public class ClasseController {
      * @return          HTTP 200 avec le DTO de la classe modifiée
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ClasseDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody ClasseCreateDTO dto,
@@ -83,6 +86,7 @@ public class ClasseController {
      * @return          HTTP 201 avec le DTO de l'attribution
      */
     @PostMapping("/attribution")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ClassePromotionDTO> attribuer(
             @Valid @RequestBody ClassePromotionDTO dto,
             HttpServletRequest request) {
@@ -99,6 +103,7 @@ public class ClasseController {
      * @return  HTTP 200 avec la liste des classes
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<ClasseDTO>> getAll() {
         return ResponseEntity.ok(classeService.getAll());
     }
@@ -110,6 +115,7 @@ public class ClasseController {
      * @return      HTTP 200 avec le DTO de la classe
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<ClasseDTO> getById(
             @PathVariable Long id) {
         return ResponseEntity.ok(classeService.getById(id));
@@ -124,6 +130,7 @@ public class ClasseController {
      * @return                  HTTP 200 avec la liste des attributions
      */
     @GetMapping("/promotion/{promotionId}")
+    @PreAuthorize("hasAnyRole('ADMIN','RESPONSABLE')")
     public ResponseEntity<List<ClassePromotionDTO>> getByPromotion(
             @PathVariable Long promotionId,
             @RequestParam Long anneeAcademiqueId) {

@@ -7,6 +7,7 @@ import org.harold.plateforme.dto.kpi.SimulationRequestDTO;
 import org.harold.plateforme.dto.kpi.SimulationSemestreResultDTO;
 import org.harold.plateforme.service.SimulationService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +43,7 @@ public class SimulationController {
      * @return      HTTP 200 avec le résultat au niveau matière
      */
     @PostMapping("/matiere")
+    @PreAuthorize("hasRole('ENSEIGNANT')")
     public ResponseEntity<SimulationMatiereResultDTO> simulerMatiere(
             @Valid @RequestBody SimulationRequestDTO dto) {
         return ResponseEntity.ok(
@@ -60,6 +62,7 @@ public class SimulationController {
      * @return      HTTP 200 avec le résultat au niveau semestre
      */
     @PostMapping("/semestre")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<SimulationSemestreResultDTO> simulerSemestre(
             @Valid @RequestBody SimulationRequestDTO dto) {
         return ResponseEntity.ok(

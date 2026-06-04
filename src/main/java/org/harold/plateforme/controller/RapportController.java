@@ -7,6 +7,7 @@ import org.harold.plateforme.service.RapportService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +40,7 @@ public class RapportController {
      * @return      HTTP 200 avec le PDF en byte[]
      */
     @PostMapping("/generer")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','RESPONSABLE')")
     public ResponseEntity<byte[]> generer(
             @Valid @RequestBody RapportRequestDTO dto) {
 

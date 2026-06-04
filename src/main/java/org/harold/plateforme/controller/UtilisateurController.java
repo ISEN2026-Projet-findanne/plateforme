@@ -10,6 +10,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.UtilisateurService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +32,7 @@ import java.util.List;
  * @author Harold
  * @version 1.0
  */
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/utilisateurs")
 @RequiredArgsConstructor

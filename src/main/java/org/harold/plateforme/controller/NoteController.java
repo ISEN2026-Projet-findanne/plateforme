@@ -10,6 +10,7 @@ import org.harold.plateforme.security.SecurityUtils;
 import org.harold.plateforme.service.NoteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,6 +48,7 @@ public class NoteController {
      * @return          HTTP 201 avec le DTO de la note créée
      */
     @PostMapping
+    @PreAuthorize("hasRole('Enseignant')")
     public ResponseEntity<NoteDTO> saisir(
             @Valid @RequestBody NoteCreateDTO dto,
             HttpServletRequest request) {
@@ -67,6 +69,7 @@ public class NoteController {
      * @return          HTTP 200 avec le DTO de la note modifiée
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('Enseignant')")
     public ResponseEntity<NoteDTO> modifier(
             @PathVariable Long id,
             @Valid @RequestBody NoteUpdateDTO dto,
@@ -86,6 +89,7 @@ public class NoteController {
      * @return                  HTTP 200 avec la liste des notes
      */
     @GetMapping("/etudiant/{etudiantId}")
+    @PreAuthorize("hasAnyRole('RESPONSABLE','ENSEIGNANT')")
     public ResponseEntity<List<NoteDTO>> getByEtudiant(
             @PathVariable Long etudiantId,
             @RequestParam Long anneeAcademiqueId) {
@@ -103,6 +107,7 @@ public class NoteController {
      * @return                  HTTP 200 avec la liste des notes
      */
     @GetMapping("/matiere/{matiereId}")
+    @PreAuthorize("hasAnyRole('RESPONSABLE','ENSEIGNANT')")
     public ResponseEntity<List<NoteDTO>> getByMatiere(
             @PathVariable Long matiereId,
             @RequestParam Long anneeAcademiqueId) {
@@ -121,6 +126,7 @@ public class NoteController {
      * @return                  HTTP 200 avec la liste des notes
      */
     @GetMapping("/groupe/{groupeId}/matiere/{matiereId}")
+    @PreAuthorize("hasAnyRole('RESPONSABLE','ENSEIGNANT')")
     public ResponseEntity<List<NoteDTO>> getByGroupeAndMatiere(
             @PathVariable Long groupeId,
             @PathVariable Long matiereId,
